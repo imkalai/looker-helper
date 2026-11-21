@@ -1,0 +1,1007 @@
+<title>Looker Helper Concept B</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one conversation, no sidebar. Home = prompt + shelf of session "packages". Setup happens inside the chat as cards.
+   Results and settings slide in as sheets from the right. The whole app fits the window; panes scroll on their own. */
+:root {
+  --bg: #f4f7f5; --surface: #ffffff; --ink: #15201b; --muted: #5a6a63; --line: #dbe3df;
+  --sunken: #eef3f0; --accent: #006a4d; --accent-soft: #e2f0ea; --on-accent: #ffffff;
+  --ok: #1f7a3a; --ok-soft: #e3f3e6; --warn: #9a5b00; --warn-soft: #fbefd9;
+  --viz-1: #006a4d; --viz-2: #8fc9b2; --viz-3: #cfe3da;
+  --scrim: rgba(15, 30, 24, .28); --shadow: 0 12px 40px rgba(15, 30, 24, .16);
+  --note-bg: #fff3bf; --note-ink: #4f3b00; --note-line: #e8c95a;
+  --code-bg: #f0f4f2; --code-key: #7a3cb3; --code-str: #1d7a52;
+  --sans: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1513; --surface: #171e1b; --ink: #e4ebe7; --muted: #96a69f; --line: #28342f;
+  --sunken: #131a17; --accent: #3fbf8a; --accent-soft: #15332a; --on-accent: #04201a;
+  --ok: #7ad69a; --ok-soft: #1a3322; --warn: #f0b35a; --warn-soft: #3a2b12;
+  --viz-1: #3fbf8a; --viz-2: #2a5a49; --viz-3: #20332c;
+  --scrim: rgba(0, 0, 0, .5); --shadow: 0 12px 40px rgba(0, 0, 0, .5);
+  --note-bg: #3a3112; --note-ink: #f4dd8c; --note-line: #6b5a1c;
+  --code-bg: #0d1311; --code-key: #c79bf2; --code-str: #7fd1a6;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f1513; --surface: #171e1b; --ink: #e4ebe7; --muted: #96a69f; --line: #28342f;
+  --sunken: #131a17; --accent: #3fbf8a; --accent-soft: #15332a; --on-accent: #04201a;
+  --ok: #7ad69a; --ok-soft: #1a3322; --warn: #f0b35a; --warn-soft: #3a2b12;
+  --viz-1: #3fbf8a; --viz-2: #2a5a49; --viz-3: #20332c;
+  --scrim: rgba(0, 0, 0, .5); --shadow: 0 12px 40px rgba(0, 0, 0, .5);
+  --note-bg: #3a3112; --note-ink: #f4dd8c; --note-line: #6b5a1c;
+  --code-bg: #0d1311; --code-key: #c79bf2; --code-str: #7fd1a6;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+h2 { font-size: 1.1rem; font-weight: 600; }
+h3 { font-size: .95rem; font-weight: 600; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.muted { color: var(--muted); }
+.small { font-size: .86rem; }
+.mono { font-family: var(--mono); font-size: .85em; }
+.label { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+svg.i { width: 18px; height: 18px; flex: none; }
+
+/* Review strip (not part of the product) */
+.review { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 10px; padding: 7px 12px; border: 1px dashed var(--line); border-radius: 8px; font-size: .8rem; }
+.review nav { display: flex; flex-wrap: wrap; gap: 4px; }
+.review a { color: var(--muted); text-decoration: none; padding: 3px 9px; border-radius: 99px; }
+.review a[aria-current="page"] { background: var(--ink); color: var(--bg); }
+.review label { display: inline-flex; gap: 6px; align-items: center; margin-left: auto; cursor: pointer; }
+
+/* Notes */
+.note { display: none; position: relative; background: var(--note-bg); color: var(--note-ink); border: 1px solid var(--note-line); border-radius: 4px; padding: 6px 10px 6px 34px; font-size: .78rem; line-height: 1.4; max-width: 66ch; }
+.note b { position: absolute; left: 8px; top: 6px; font: 600 .72rem var(--mono); }
+body.notes-on .note { display: block; }
+
+/* App frame */
+.app { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.top { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 700; text-decoration: none; color: var(--ink); white-space: nowrap; }
+.brand-mark { width: 28px; height: 28px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; color: var(--on-accent); }
+.brand-mark svg { width: 16px; height: 16px; }
+.brand-mark.logo { background: transparent; width: auto; min-width: 28px; }
+.brand-mark.logo img { height: 28px; width: auto; display: block; }
+.ticket { display: inline-flex; align-items: center; gap: 8px; min-width: 0; margin-left: 10px; padding: 5px 12px 5px 10px; border-radius: 99px; background: var(--sunken); border: 1px solid var(--line); font-size: .84rem; color: var(--muted); }
+.ticket span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticket b { color: var(--ink); font-weight: 600; }
+.ticket svg { width: 14px; height: 14px; color: var(--accent); }
+.spacer { flex: 1; }
+.icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; border: 1px solid transparent; background: transparent; color: var(--muted); text-decoration: none; }
+.icon-btn:hover { background: var(--sunken); color: var(--ink); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: .78rem; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 18px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; font-weight: 600; font-size: .9rem; white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.sm { padding: 6px 13px; font-size: .84rem; }
+.btn.quiet { border-color: transparent; background: transparent; color: var(--accent); }
+.btn svg { width: 16px; height: 16px; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px; border-radius: 99px; font-size: .76rem; font-weight: 500; background: var(--sunken); color: var(--muted); white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.accent { background: var(--accent-soft); color: var(--accent); }
+
+.view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* HOME */
+.home { overflow-y: auto; }
+.home-inner { width: 100%; max-width: 1080px; margin: 0 auto; padding: clamp(24px, 5vh, 56px) 24px 40px; display: flex; flex-direction: column; gap: 36px; }
+.hero { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.hero p { color: var(--muted); font-size: 1.05rem; }
+.prompt { display: flex; flex-direction: column; gap: 10px; padding: 10px; border-radius: 20px; background: var(--surface); border: 1.5px solid var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+.prompt textarea { border: 0; outline: none; resize: none; background: transparent; padding: 8px 10px; font-size: 1.08rem; min-height: 56px; }
+.prompt-foot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 5px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--sunken); font-size: .84rem; color: var(--muted); }
+.chip:hover { color: var(--accent); border-color: var(--accent); }
+.work-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+.work-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.work-tools input { padding: 8px 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); min-width: 0; width: 220px; }
+.seg { display: inline-flex; padding: 3px; border-radius: 99px; background: var(--sunken); border: 1px solid var(--line); }
+.seg button { padding: 5px 14px; border: 0; border-radius: 99px; background: transparent; font-size: .84rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+.shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 16px; }
+.pkg { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); transition: border-color .15s, transform .15s; }
+.pkg:hover { border-color: var(--accent); transform: translateY(-2px); }
+.thumb { aspect-ratio: 16 / 9; max-width: 100%; background: var(--sunken); border-bottom: 1px solid var(--line); padding: 12px; }
+.thumb svg { width: 100%; height: 100%; display: block; }
+.pkg-body { padding: 12px 14px 4px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.pkg-body a { color: var(--ink); text-decoration: none; font-weight: 600; }
+.pkg-body a::after { content: ""; }
+.pkg-body .sub { color: var(--muted); font-size: .82rem; }
+.pkg-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px 12px; }
+.pkg.new { border-style: dashed; align-items: center; justify-content: center; text-align: center; gap: 8px; padding: 24px; color: var(--muted); text-decoration: none; min-height: 200px; }
+.pkg.new strong { color: var(--accent); font-size: 1rem; }
+.plus { width: 44px; height: 44px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+@media (prefers-reduced-motion: reduce) { .pkg { transition: none; } .pkg:hover { transform: none; } }
+
+/* Thumbnail sketch colours */
+.t1 { fill: var(--viz-1); } .t2 { fill: var(--viz-2); } .t3 { fill: var(--viz-3); } .tl { fill: none; stroke: var(--viz-1); stroke-width: 2.5; }
+.tbg { fill: var(--surface); }
+
+/* CONVERSATION */
+.convo { position: relative; }
+.thread { flex: 1; min-height: 0; overflow-y: auto; }
+.thread-inner { max-width: 780px; margin: 0 auto; padding: 28px 24px; display: flex; flex-direction: column; gap: 18px; }
+.msg { display: flex; gap: 12px; align-items: flex-start; }
+.msg .face { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; }
+.msg .face svg { width: 15px; height: 15px; }
+.msg .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.msg.user { justify-content: flex-end; }
+.msg.user .bubble { max-width: 80%; padding: 10px 16px; border-radius: 18px 18px 4px 18px; background: var(--accent-soft); }
+.divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .8rem; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.divider .ticket { margin: 0; max-width: 100%; }
+
+/* Inline cards (setup, plan, result) */
+.card { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+details.card > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+details.card > summary::-webkit-details-marker { display: none; }
+details.card[open] > summary { border-bottom: 1px solid var(--line); }
+.step-dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 700; background: var(--sunken); color: var(--muted); flex: none; }
+.done .step-dot { background: var(--ok); color: var(--surface); }
+.cur .step-dot { background: var(--accent); color: var(--on-accent); }
+summary .sum-text { flex: 1; min-width: 0; }
+summary .sum-text small { display: block; color: var(--muted); font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; background: var(--sunken); border-top: 1px solid var(--line); }
+.q { display: flex; flex-direction: column; gap: 8px; }
+.q > span { font-weight: 600; font-size: .9rem; }
+.choice { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice label { position: relative; cursor: pointer; }
+.choice input { position: absolute; opacity: 0; }
+.choice label span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--line); font-size: .86rem; }
+.choice label span small { color: var(--muted); font-family: var(--mono); font-size: .74rem; }
+.choice input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.choice input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 8px; }
+.tile { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px 10px 38px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.tile input { position: absolute; left: 12px; top: 13px; accent-color: var(--accent); }
+.tile:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.tile strong { font-weight: 600; font-size: .9rem; }
+.tile small { color: var(--muted); font-size: .78rem; line-height: 1.35; }
+.tile em { font-style: normal; color: var(--muted); font-size: .72rem; font-variant-numeric: tabular-nums; }
+.conn-tiles { display: flex; flex-direction: column; gap: 8px; }
+.conn-tiles .tile { padding-right: 110px; }
+.conn-tiles .pill { position: absolute; right: 12px; top: 12px; }
+.tile.add strong { color: var(--accent); }
+.form { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 12px; background: var(--sunken); border: 1px dashed var(--accent); }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label { font-size: .86rem; font-weight: 600; }
+.field input, .field select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); min-width: 0; }
+.field .hint { font-size: .78rem; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+details.dev summary { cursor: pointer; color: var(--accent); font-size: .86rem; font-weight: 600; }
+details.dev[open] summary { margin-bottom: 12px; }
+.ok-msg { color: var(--ok); font-size: .84rem; }
+
+.plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.plan ul { margin: 6px 0 0; padding-left: 18px; font-size: .9rem; }
+.plan li span { color: var(--muted); }
+.result { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+.result .thumb { aspect-ratio: auto; border-bottom: 0; border-right: 1px solid var(--line); min-height: 150px; }
+.result .info { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.thinking { display: flex; gap: 6px; align-items: center; font-size: .84rem; color: var(--muted); padding-left: 42px; }
+.thinking i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+.thinking i:nth-child(2) { animation-delay: .2s; } .thinking i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 100% { opacity: .25 } 50% { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .thinking i { animation: none; } }
+
+.composer { flex: none; border-top: 1px solid var(--line); }
+.composer-inner { max-width: 780px; margin: 0 auto; padding: 12px 24px 16px; display: flex; flex-direction: column; gap: 10px; }
+.box { display: flex; gap: 8px; align-items: flex-end; padding: 8px 8px 8px 16px; border: 1.5px solid var(--line); border-radius: 20px; background: var(--surface); }
+.box:focus-within { border-color: var(--accent); }
+.box textarea { flex: 1; min-width: 0; border: 0; outline: none; resize: none; background: transparent; padding: 6px 0; min-height: 40px; }
+.box.locked { background: var(--sunken); }
+
+/* Sheets (package + settings) */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 20; }
+.sheet { position: absolute; top: 0; right: 0; bottom: 0; width: min(620px, 100%); background: var(--surface); border-left: 1px solid var(--line); box-shadow: var(--shadow); z-index: 21; display: flex; flex-direction: column; animation: slide .22s ease-out; }
+@keyframes slide { from { transform: translateX(24px); opacity: .6 } to { transform: none; opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } }
+.sheet-head { flex: none; display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.sheet-head > div { flex: 1; min-width: 0; }
+.sheet-tabs { flex: none; padding: 12px 20px 0; }
+.sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+.sheet-foot { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); background: var(--sunken); }
+
+.dash { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kpi { border-radius: 10px; background: var(--sunken); padding: 10px 12px; }
+.kpi span { display: block; font-size: .74rem; color: var(--muted); }
+.kpi strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.charts { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px; }
+.chart { border-radius: 10px; background: var(--sunken); padding: 10px 12px; min-width: 0; }
+.chart span { font-size: .74rem; color: var(--muted); }
+.chart svg { display: block; width: 100%; height: 110px; }
+.metric { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.metric:last-child { border-bottom: 0; }
+.metric p { grid-column: 1 / -1; color: var(--muted); font-size: .86rem; }
+.ftabs { display: flex; gap: 4px; overflow-x: auto; }
+.ftabs button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 99px; background: transparent; font: .76rem var(--mono); color: var(--muted); white-space: nowrap; }
+.ftabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.code-wrap { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.code-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; background: var(--code-bg); border-bottom: 1px solid var(--line); font-size: .78rem; }
+.code { margin: 0; padding: 14px 16px; overflow: auto; font: .78rem/1.6 var(--mono); background: var(--code-bg); tab-size: 2; }
+.code .k { color: var(--code-key); } .code .s { color: var(--code-str); }
+
+/* Settings sheet */
+.acc { border: 1px solid var(--line); border-radius: 12px; }
+.acc > summary { cursor: pointer; padding: 14px 16px; display: flex; align-items: center; gap: 10px; list-style: none; }
+.acc > summary::-webkit-details-marker { display: none; }
+.acc > summary .sum-text { flex: 1; }
+.acc > summary .sum-text small { display: block; color: var(--muted); font-size: .82rem; }
+.acc > summary::after { content: "+"; font-size: 1.2rem; color: var(--muted); }
+.acc[open] > summary::after { content: "–"; }
+.acc[open] > summary { border-bottom: 1px solid var(--line); }
+.acc-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row small { display: block; color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+.row .row-btns { display: flex; gap: 2px; grid-column: 1 / -1; }
+.switch { position: relative; width: 40px; height: 24px; flex: none; }
+.switch input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; z-index: 1; }
+.switch i { position: absolute; inset: 0; border-radius: 99px; background: var(--line); transition: background .15s; }
+.switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); transition: transform .15s; }
+.switch input:checked + i { background: var(--accent); }
+.switch input:checked + i::after { transform: translateX(16px); }
+.switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* New session dialog */
+.dialog { position: absolute; z-index: 21; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(680px, calc(100% - 32px)); max-height: calc(100% - 32px); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); animation: pop .2s ease-out; }
+@keyframes pop { from { opacity: .6; transform: translate(-50%, -48%) } to { opacity: 1; transform: translate(-50%, -50%) } }
+@media (prefers-reduced-motion: reduce) { .dialog { animation: none; } }
+.dlg-head { flex: none; padding: 18px 22px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; }
+.dlg-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.progress { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.progress i { height: 4px; border-radius: 99px; background: var(--line); }
+.progress i.on { background: var(--accent); }
+.request { font-size: .88rem; padding: 8px 12px; border-radius: 10px; background: var(--accent-soft); overflow-wrap: anywhere; }
+.dlg-body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 18px; }
+.dlg-foot { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line); background: var(--sunken); border-radius: 0 0 18px 18px; }
+
+/* Results: built-in extras and trust details (no choices for the user) */
+.included { padding: 12px 16px; border-top: 1px solid var(--line); font-size: .88rem; color: var(--muted); }
+.included b { color: var(--ink); font-weight: 600; }
+.trust-sec { display: flex; flex-direction: column; gap: 6px; }
+.trust-sec + .trust-sec { padding-top: 14px; border-top: 1px solid var(--line); }
+.tlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tlist li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: start; font-size: .9rem; }
+.tlist small { display: block; color: var(--muted); font-size: .8rem; }
+.mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .72rem; font-weight: 700; background: var(--ok-soft); color: var(--ok); }
+.mark.warn { background: var(--warn-soft); color: var(--warn); }
+.mark.off { background: var(--sunken); color: var(--muted); }
+.lin { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 4px 12px; font-size: .88rem; }
+.lin span:nth-child(even) { font-family: var(--mono); font-size: .78rem; color: var(--muted); overflow-wrap: anywhere; }
+
+@media (max-width: 860px) {
+  .ticket.in-top { display: none; }
+  .plan { grid-template-columns: minmax(0, 1fr); }
+  .result { grid-template-columns: minmax(0, 1fr); }
+  .result .thumb { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 600px) {
+  .top { padding: 10px 12px; gap: 4px; }
+  .top .btn .lbl { display: none; }
+  .home-inner, .thread-inner, .composer-inner { padding-left: 16px; padding-right: 16px; }
+  .fields, .kpis, .charts { grid-template-columns: minmax(0, 1fr); }
+  .work-tools input { width: 100%; }
+  .conn-tiles .tile { padding-right: 12px; }
+  .conn-tiles .pill { position: static; align-self: flex-start; margin-top: 4px; }
+  .msg.user .bubble { max-width: 92%; }
+  .lin { grid-template-columns: minmax(0, 1fr); }
+  .lin span:nth-child(even) { margin-bottom: 6px; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6a7.4 7.4 0 0 1 1.9 1.1l2.5-.9 1.7 2.9-2 1.7a7.4 7.4 0 0 1 0 2.2l2 1.7-1.7 2.9-2.5-.9a7.4 7.4 0 0 1-1.9 1.1l-.5 2.6h-3.4l-.5-2.6a7.4 7.4 0 0 1-1.9-1.1l-2.5.9-1.7-2.9 2-1.7a7.4 7.4 0 0 1 0-2.2l-2-1.7 1.7-2.9 2.5.9a7.4 7.4 0 0 1 1.9-1.1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="review" role="region" aria-label="Wireframe review controls">
+  <strong>Concept B</strong>
+  <nav aria-label="Screens">
+    <a href="#home" data-route="home">1 · Home</a>
+    <a href="#start" data-route="start">2 · New session</a>
+    <a href="#chat" data-route="chat">3 · Session</a>
+    <a href="#package" data-route="package">4 · Package</a>
+    <a href="#prefs" data-route="prefs">5 · Settings</a>
+  </nav>
+  <label for="notesToggle"><input type="checkbox" id="notesToggle" checked> Show review notes</label>
+</div>
+
+<div class="app">
+  <header class="top">
+    <!-- Brand logo slot: drop the official logo file (from your brand team) at wireframe/assets/brand-logo.svg. Falls back to the neutral mark if missing. -->
+    <a class="brand" href="#home"><span class="brand-mark" id="brandMark"><svg><use href="#i-spark"/></svg></span><span>Looker Helper</span></a>
+    <span class="ticket in-top" id="topTicket" hidden><svg><use href="#i-lock"/></svg><span id="topTicketText"></span></span>
+    <span class="spacer"></span>
+    <a class="btn primary sm" href="#start"><svg><use href="#i-plus"/></svg><span class="lbl">New session</span></a>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch to dark theme"><svg class="i"><use href="#i-moon"/></svg></button>
+    <a class="icon-btn" href="#prefs" aria-label="Settings"><svg class="i"><use href="#i-gear"/></svg></a>
+    <span class="avatar" title="Your profile">KP</span>
+  </header>
+
+  <!-- ================= HOME ================= -->
+  <section class="view home" data-view="home">
+    <div class="home-inner">
+      <div class="hero">
+        <h1>What would you like to measure?</h1>
+        <p>Describe it in your own words. We'll turn your BigQuery tables into Looker metrics and a dashboard.</p>
+        <div class="prompt">
+          <label for="homeAsk" class="label" style="padding:4px 10px 0">Your request</label>
+          <textarea id="homeAsk" rows="2" placeholder="e.g. Revenue by region for each month, as a dashboard"></textarea>
+          <div class="prompt-foot">
+            <div class="chips">
+              <button class="chip" data-ex="Revenue by region for each month, as a dashboard">Sales by region</button>
+              <button class="chip" data-ex="Customer churn rate over the last 12 months">Customer churn</button>
+              <button class="chip" data-ex="Top 10 products by revenue and returns">Top products</button>
+            </div>
+            <a class="btn primary" href="#start">Start <svg><use href="#i-send"/></svg></a>
+          </div>
+        </div>
+        <div class="note"><b>H1</b>No sidebar, no dashboard of stats. Home is one question and your past work. Pressing Start opens a new session with this request already in it.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="work-head">
+          <div><h2>Your work</h2><p class="muted small">Each session is a package you can reopen or download as one .zip.</p></div>
+          <div class="work-tools">
+            <input id="workSearch" placeholder="Search your work…" aria-label="Search your work">
+            <div class="seg" role="group" aria-label="Filter by status">
+              <button type="button" aria-pressed="true" data-filter="all">All</button>
+              <button type="button" aria-pressed="false" data-filter="ready">Ready</button>
+              <button type="button" aria-pressed="false" data-filter="review">Needs a look</button>
+            </div>
+          </div>
+        </div>
+        <div class="shelf" id="shelf">
+          <a class="pkg new" href="#start"><span class="plus"><svg class="i"><use href="#i-plus"/></svg></span><strong>Start something new</strong><span class="small">Pick your data, then ask</span></a>
+
+          <article class="pkg" data-status="ready">
+            <div class="thumb" data-thumb="line"></div>
+            <div class="pkg-body"><a href="#chat">Monthly sales by region</a><span class="sub">Sales data · today, 09:44</span><span class="sub">1 dashboard · 3 metrics</span></div>
+            <div class="pkg-foot"><span class="pill ok">Ready</span><button class="btn sm" type="button"><svg><use href="#i-dl"/></svg> .zip</button></div>
+          </article>
+          <article class="pkg" data-status="ready">
+            <div class="thumb" data-thumb="area"></div>
+            <div class="pkg-body"><a href="#chat">Customer churn</a><span class="sub">CRM data · yesterday</span><span class="sub">1 dashboard · 2 metrics</span></div>
+            <div class="pkg-foot"><span class="pill ok">Ready</span><button class="btn sm" type="button"><svg><use href="#i-dl"/></svg> .zip</button></div>
+          </article>
+          <article class="pkg" data-status="review">
+            <div class="thumb" data-thumb="table"></div>
+            <div class="pkg-body"><a href="#chat">Warehouse stock levels</a><span class="sub">Warehouse data · 18 Nov</span><span class="sub">No dashboard yet · 5 metrics</span></div>
+            <div class="pkg-foot"><span class="pill warn">Needs a look</span><button class="btn sm" type="button"><svg><use href="#i-dl"/></svg> .zip</button></div>
+          </article>
+          <article class="pkg" data-status="ready">
+            <div class="thumb" data-thumb="bars"></div>
+            <div class="pkg-body"><a href="#chat">Marketing funnel</a><span class="sub">Web events · 14 Nov</span><span class="sub">1 dashboard · 4 metrics</span></div>
+            <div class="pkg-foot"><span class="pill ok">Ready</span><button class="btn sm" type="button"><svg><use href="#i-dl"/></svg> .zip</button></div>
+          </article>
+          <article class="pkg" data-status="ready">
+            <div class="thumb" data-thumb="line"></div>
+            <div class="pkg-body"><a href="#chat">Loan applications weekly</a><span class="sub">Lending data · 11 Nov</span><span class="sub">1 dashboard · 3 metrics</span></div>
+            <div class="pkg-foot"><span class="pill ok">Ready</span><button class="btn sm" type="button"><svg><use href="#i-dl"/></svg> .zip</button></div>
+          </article>
+        </div>
+        <div class="note"><b>H2</b>Sessions and downloads are one thing: a package card. The thumbnail is a sketch of the dashboard layout that was built. This replaces the separate "My files" page. Developers see the files inside a package by opening it.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= NEW SESSION DIALOG ================= -->
+  <div class="dialog" id="setupDlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" hidden>
+    <div class="dlg-head">
+      <div class="dlg-title">
+        <div><span class="label" id="dlgStepLabel">Step 1 of 2</span><h2 id="dlgTitle">Which data should we use?</h2></div>
+        <a class="icon-btn" href="#home" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></a>
+      </div>
+      <div class="progress" aria-hidden="true"><i class="on" data-bar="1"></i><i data-bar="2"></i></div>
+      <p class="request"><span class="muted">Your request:</span> Revenue by region for each month, as a dashboard</p>
+    </div>
+
+    <div class="dlg-body" data-step="1">
+      <div class="q"><span>Google Cloud project</span>
+        <div class="choice">
+          <label for="pA"><input type="radio" name="proj" id="pA" checked><span>Acme Analytics <small>acme-analytics</small></span></label>
+          <label for="pB"><input type="radio" name="proj" id="pB"><span>Acme Operations <small>acme-ops</small></span></label>
+          <label for="pC"><input type="radio" name="proj" id="pC"><span>Acme Marketing <small>acme-mkt</small></span></label>
+        </div>
+      </div>
+      <div class="q"><span>Dataset</span>
+        <div class="choice">
+          <label for="dA"><input type="radio" name="ds" id="dA" checked><span>Sales data <small>sales</small></span></label>
+          <label for="dB"><input type="radio" name="ds" id="dB"><span>CRM data <small>crm</small></span></label>
+          <label for="dC"><input type="radio" name="ds" id="dC"><span>Finance <small>finance</small></span></label>
+        </div>
+      </div>
+      <div class="q"><span>Tables <span class="muted small" style="font-weight:400">· <span id="tblCount">3</span> picked · suggested from your request</span></span>
+        <div class="tiles" id="tblTiles">
+          <label class="tile" for="t1"><input type="checkbox" id="t1" checked><strong>Orders</strong><small>One row per order, with amount and status</small><em>2.4M rows</em></label>
+          <label class="tile" for="t2"><input type="checkbox" id="t2" checked><strong>Order items</strong><small>Products in each order</small><em>9.1M rows</em></label>
+          <label class="tile" for="t3"><input type="checkbox" id="t3" checked><strong>Customers</strong><small>Customer details, incl. region</small><em>310K rows</em></label>
+          <label class="tile" for="t4"><input type="checkbox" id="t4"><strong>Products</strong><small>Catalogue with category and price</small><em>8.2K rows</em></label>
+          <label class="tile" for="t5"><input type="checkbox" id="t5"><strong>Regions</strong><small>Region names and territories</small><em>42 rows</em></label>
+          <label class="tile" for="t6"><input type="checkbox" id="t6"><strong>Returns</strong><small>Returned orders and reasons</small><em>61K rows</em></label>
+        </div>
+      </div>
+      <div class="note"><b>N1</b>Opens as a dialog over Home when a session starts. The request typed on Home is shown at the top, and Cortex uses it to pre-tick the likely tables, so most users just press Next.</div>
+    </div>
+
+    <div class="dlg-body" data-step="2" hidden>
+      <div class="conn-tiles" id="connTiles">
+        <label class="tile" for="cA"><input type="radio" name="conn" id="cA" checked><strong>Acme Looker (Production)</strong><small>acme.cloud.looker.com</small><span class="pill ok">Connected</span></label>
+        <label class="tile" for="cB"><input type="radio" name="conn" id="cB"><strong>Acme Looker (Development)</strong><small>acme-dev.cloud.looker.com</small><span class="pill">Not tested</span></label>
+        <label class="tile add" for="cNew"><input type="radio" name="conn" id="cNew"><strong>+ Add a new Looker connection</strong><small>Saved to your settings for next time</small></label>
+      </div>
+
+      <div class="form" id="newConn" hidden>
+        <h3>New Looker connection</h3>
+        <div class="fields">
+          <div class="field"><label for="ncName">Name</label><input id="ncName" placeholder="e.g. Finance Looker"><span class="hint">Any name that helps you recognise it</span></div>
+          <div class="field"><label for="ncUrl">Looker address</label><input id="ncUrl" placeholder="https://yourcompany.cloud.looker.com"><span class="hint">The address you open Looker with</span></div>
+          <div class="field"><label for="ncBq">BigQuery connection in Looker</label><input id="ncBq" placeholder="e.g. bq_finance"><span class="hint">Ask your Looker admin if unsure</span></div>
+          <div class="field"><label for="ncLayout">Folder layout</label><select id="ncLayout"><option>views/ models/ dashboards/ (standard)</option><option>All files in one folder</option></select></div>
+          <div class="field"><label for="ncId">API client ID <span class="muted">(optional)</span></label><input id="ncId" autocomplete="off"></div>
+          <div class="field"><label for="ncSecret">API client secret <span class="muted">(optional)</span></label><input id="ncSecret" type="password" autocomplete="new-password"><span class="hint">Stored encrypted</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn sm" type="button" id="ncTest">Test</button>
+          <button class="btn sm primary" type="button">Save and use</button>
+          <span class="ok-msg" id="ncOk" hidden>✓ Connected. Found “bq_finance”.</span>
+        </div>
+      </div>
+
+      <details class="dev">
+        <summary>Developer options</summary>
+        <div class="fields">
+          <div class="field"><label for="model">Model name</label><input id="model" value="sales"><span class="hint">Creates <span class="mono">sales.model.lkml</span>. Use an existing model's name to add to it.</span></div>
+          <div class="field"><span class="label">Folder layout</span><span class="small">views/ · models/ · dashboards/</span><span class="hint">From the Looker connection</span></div>
+        </div>
+      </details>
+      <div class="note"><b>N2</b>Saved connections are one click. Adding a new one happens inside the dialog. Model name stays hidden under Developer options.</div>
+    </div>
+
+    <div class="dlg-foot">
+      <span class="muted small" id="dlgHint">✓ You have access to this data</span>
+      <span class="actions">
+        <button class="btn sm" type="button" id="dlgBack" hidden>Back</button>
+        <button class="btn sm primary" type="button" id="dlgNext">Next</button>
+        <a class="btn sm primary" href="#chat" id="dlgStart" hidden>Start session</a>
+      </span>
+    </div>
+  </div>
+
+  <!-- ================= SESSION ================= -->
+  <section class="view convo" data-view="chat" hidden>
+    <div class="thread">
+      <div class="thread-inner">
+        <div class="divider"><span class="ticket" title="acme-analytics.sales · orders, order_items, customers · bq_acme_analytics · model sales"><svg><use href="#i-lock"/></svg><span><b>Sales data</b> · 3 tables → Acme Looker (Production)</span></span></div>
+        <div class="note"><b>S1</b>The locked scope sits in the thread (and in the top bar while scrolling). Hover shows exact IDs. Only this data is sent to Cortex.</div>
+
+        <div class="msg user"><div class="bubble">Revenue by region for each month, as a dashboard</div></div>
+
+        <div class="msg">
+          <span class="face"><svg><use href="#i-spark"/></svg></span>
+          <div class="body">
+            <p>Here's what I'll build. Does this look right?</p>
+            <div class="card">
+              <div class="card-body plan">
+                <div><span class="label">Metrics</span><ul><li>Total revenue <span>(sum of order amounts)</span></li><li>Number of orders</li><li>Average order value</li></ul></div>
+                <div><span class="label">Broken down by</span><ul><li>Customer region</li><li>Order month</li></ul></div>
+                <div><span class="label">Dashboard</span><ul><li>3 headline numbers</li><li>Monthly revenue trend</li><li>Revenue by region</li></ul></div>
+              </div>
+              <p class="included"><b>Also included:</b> comparison with last year, click any chart to filter the rest, and personal data kept hidden.</p>
+              <div class="card-foot"><span class="muted small">Nothing is created until you say so</span><span class="actions"><button class="btn sm" type="button">Change something</button><button class="btn sm primary" type="button">Build it</button></span></div>
+            </div>
+            <div class="note"><b>S3</b>No extra choices for the user. Good Looker practice is applied automatically: correct totals across joins, a 12-month default on large tables, caching, hidden personal data, data checks, compare-to-last-year and click-to-filter. The plan names the visible ones in one sentence. If the user wants something different they just say so in the chat.</div>
+          </div>
+        </div>
+
+        <div class="msg user"><div class="bubble">Yes, but leave out cancelled orders.</div></div>
+
+        <div class="msg">
+          <span class="face"><svg><use href="#i-spark"/></svg></span>
+          <div class="body">
+            <p>Done. Cancelled orders are left out everywhere.</p>
+            <div class="card result">
+              <div class="thumb" data-thumb="line"></div>
+              <div class="info">
+                <h3>Monthly sales by region</h3>
+                <p class="muted small">1 dashboard · 3 metrics · 4 files</p>
+                <span><span class="pill ok">✓ Checked and ready</span> <span class="pill warn">1 tip</span></span>
+                <div class="actions" style="margin-top:auto">
+                  <a class="btn sm primary" href="#package">Open package</a>
+                  <button class="btn sm" type="button"><svg><use href="#i-dl"/></svg> .zip</button>
+                </div>
+              </div>
+            </div>
+            <div class="note"><b>S2</b>Each build returns a package card in the chat. One click opens the preview, metrics and code; one click downloads. The chat stays full width, so there's no permanent split screen.</div>
+          </div>
+        </div>
+
+        <div class="thinking"><i></i><i></i><i></i> Example of a working state: "Checking your tables…"</div>
+      </div>
+    </div>
+    <div class="composer">
+      <div class="composer-inner">
+        <div class="chips">
+          <button class="chip" type="button">Compare with last year</button>
+          <button class="chip" type="button">Add a product category filter</button>
+          <button class="chip" type="button">What does each metric mean?</button>
+        </div>
+        <div class="box"><textarea id="chatIn" rows="1" placeholder="Ask for a change in your own words…" aria-label="Message"></textarea><button class="btn primary sm" type="button" aria-label="Send"><svg><use href="#i-send"/></svg></button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PACKAGE SHEET ================= -->
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="sheet" id="pkgSheet" hidden aria-label="Package">
+    <div class="sheet-head">
+      <div><span class="label">Package</span><h2>Monthly sales by region</h2></div>
+      <a class="icon-btn" href="#chat" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></a>
+    </div>
+    <div class="sheet-tabs">
+      <div class="seg" role="group" aria-label="Package view">
+        <button type="button" aria-pressed="true" data-pane="pv">Preview</button>
+        <button type="button" aria-pressed="false" data-pane="pm">Metrics</button>
+        <button type="button" aria-pressed="false" data-pane="pt">Checks</button>
+        <button type="button" aria-pressed="false" data-pane="pc">Files</button>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <div data-panel="pv" style="display:flex;flex-direction:column;gap:14px">
+        <div class="dash">
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><h3>Monthly Sales by Region</h3><span class="muted small">Layout preview · sample numbers</span></div>
+          <div class="kpis">
+            <div class="kpi"><span>Total revenue</span><strong>£4.82M</strong></div>
+            <div class="kpi"><span>Orders</span><strong>61,240</strong></div>
+            <div class="kpi"><span>Avg order value</span><strong>£78.70</strong></div>
+          </div>
+          <div class="charts">
+            <div class="chart"><span>Revenue by month</span>
+              <svg viewBox="0 0 240 110" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 96 L240 96" stroke="var(--line)" stroke-width="1" fill="none"/>
+                <path d="M0 84 L22 76 L44 78 L66 64 L88 68 L110 54 L132 58 L154 44 L176 46 L198 32 L220 34 L240 22 L240 96 L0 96 Z" fill="var(--accent-soft)"/>
+                <path d="M0 84 L22 76 L44 78 L66 64 L88 68 L110 54 L132 58 L154 44 L176 46 L198 32 L220 34 L240 22" fill="none" stroke="var(--viz-1)" stroke-width="2.5"/>
+                <circle cx="237" cy="22" r="3.5" fill="var(--viz-1)"/>
+              </svg></div>
+            <div class="chart"><span>Revenue by region</span>
+              <svg viewBox="0 0 120 110" preserveAspectRatio="none" aria-hidden="true">
+                <rect x="0" y="10" width="112" height="16" rx="3" fill="var(--viz-1)"/>
+                <rect x="0" y="35" width="84" height="16" rx="3" fill="var(--viz-1)"/>
+                <rect x="0" y="60" width="58" height="16" rx="3" fill="var(--viz-2)"/>
+                <rect x="0" y="85" width="36" height="16" rx="3" fill="var(--viz-2)"/>
+              </svg></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" style="gap:10px">
+            <div><h3>Once it's in Looker</h3><p class="muted small">Available after you send this package to Looker.</p></div>
+            <div class="actions">
+              <button class="btn sm" type="button">Show real numbers</button>
+              <button class="btn sm" type="button">Email me every Monday</button>
+              <button class="btn sm" type="button">Alert me if revenue drops 10%</button>
+            </div>
+          </div>
+        </div>
+        <div class="note"><b>P1</b>Preview shows sample numbers until the package is in Looker. "Show real numbers" runs the dashboard's queries in Looker dev mode. Schedules and alerts are created through the Looker API on the user's behalf.</div>
+      </div>
+
+      <div data-panel="pt" hidden style="display:flex;flex-direction:column;gap:14px">
+        <div class="trust-sec">
+          <span class="label">Checked for you</span>
+          <ul class="tlist">
+            <li><span class="mark">✓</span><span>Works in Looker<small>Checked by Looker itself before you download</small></span><span></span></li>
+            <li><span class="mark">✓</span><span>Totals are correct<small>Revenue isn't counted twice when orders and items are combined</small></span><span></span></li>
+            <li><span class="mark">✓</span><span>Data looks healthy<small>Order IDs are unique and revenue is never negative</small></span><span></span></li>
+            <li><span class="mark">✓</span><span>Personal data is hidden<small>Email and date of birth are only visible to people allowed to see them</small></span><span></span></li>
+            <li><span class="mark">✓</span><span>Quick and low cost<small>Shows the last 12 months by default and reuses results until new data arrives</small></span><span></span></li>
+            <li><span class="mark warn">!</span><span>One tip<small>The amount column has no description in BigQuery. Adding one helps your team understand the revenue figure.</small></span><span></span></li>
+          </ul>
+        </div>
+        <div class="trust-sec">
+          <span class="label">Where the numbers come from</span>
+          <div class="lin">
+            <span>Total revenue</span><span>Order amounts, excluding cancelled orders</span>
+            <span>Number of orders</span><span>Each order counted once</span>
+            <span>Average order value</span><span>Total revenue ÷ number of orders</span>
+            <span>Customer region</span><span>From the Customers table</span>
+          </div>
+        </div>
+        <div class="note"><b>P2</b>Read-only. Every best practice was applied automatically and is listed here as plain outcomes, with no switches. Developers can see the details in the Files tab.</div>
+      </div>
+
+      <div data-panel="pm" hidden>
+        <div class="metric"><strong>Total revenue</strong><span class="pill accent">Currency</span><p>Sum of order amounts, excluding cancelled orders.</p></div>
+        <div class="metric"><strong>Number of orders</strong><span class="pill accent">Count</span><p>Count of orders, excluding cancelled orders.</p></div>
+        <div class="metric"><strong>Average order value</strong><span class="pill accent">Currency</span><p>Total revenue divided by number of orders.</p></div>
+        <div class="metric"><strong>Customer region</strong><span class="pill">Breakdown</span><p>From the Customers table.</p></div>
+        <div class="metric"><strong>Order month</strong><span class="pill">Breakdown</span><p>From the order date. Also available by day, week, quarter and year.</p></div>
+        <p class="small" style="margin-top:12px"><span class="pill warn">Tip</span> The <b>amount</b> column has no description in BigQuery. Adding one helps your team understand the revenue metric.</p>
+      </div>
+
+      <div data-panel="pc" hidden style="display:flex;flex-direction:column;gap:12px">
+        <p class="muted small">For Looker developers. These are the files in the .zip.</p>
+        <div class="ftabs" role="tablist" aria-label="Files">
+          <button role="tab" aria-selected="true" data-file="orders">orders.view.lkml</button>
+          <button role="tab" aria-selected="false" data-file="customers">customers.view.lkml</button>
+          <button role="tab" aria-selected="false" data-file="model">sales.model.lkml</button>
+          <button role="tab" aria-selected="false" data-file="dash">monthly_sales.dashboard.lookml</button>
+        </div>
+        <div class="code-wrap">
+          <div class="code-tools"><span class="muted" id="fileMeta">views/orders.view.lkml · version 2</span><span class="actions"><button class="btn sm" type="button" id="copyBtn">Copy</button><button class="btn sm" type="button">Compare versions</button><button class="btn sm" type="button">Edit</button></span></div>
+<pre class="code" data-code="orders"><span class="k">view</span>: orders {
+  <span class="k">sql_table_name</span>: <span class="s">`acme-analytics.sales.orders`</span> ;;
+
+  <span class="k">dimension</span>: order_id {
+    <span class="k">primary_key</span>: yes
+    <span class="k">sql</span>: ${TABLE}.order_id ;;
+  }
+
+  <span class="k">dimension_group</span>: created {
+    <span class="k">type</span>: time
+    <span class="k">timeframes</span>: [date, week, month, quarter, year]
+    <span class="k">sql</span>: ${TABLE}.created_at ;;
+  }
+
+  <span class="k">measure</span>: total_revenue {
+    <span class="k">label</span>: <span class="s">"Total revenue"</span>
+    <span class="k">type</span>: sum
+    <span class="k">sql</span>: ${TABLE}.amount ;;
+    <span class="k">value_format_name</span>: gbp
+  }
+
+  <span class="k">measure</span>: order_count {
+    <span class="k">label</span>: <span class="s">"Number of orders"</span>
+    <span class="k">type</span>: count
+  }
+
+  <span class="k">measure</span>: avg_order_value {
+    <span class="k">label</span>: <span class="s">"Average order value"</span>
+    <span class="k">type</span>: number
+    <span class="k">sql</span>: ${total_revenue} / NULLIF(${order_count}, 0) ;;
+    <span class="k">value_format_name</span>: gbp
+  }
+}</pre>
+<pre class="code" data-code="customers" hidden><span class="k">view</span>: customers {
+  <span class="k">sql_table_name</span>: <span class="s">`acme-analytics.sales.customers`</span> ;;
+
+  <span class="k">dimension</span>: customer_id {
+    <span class="k">primary_key</span>: yes
+    <span class="k">sql</span>: ${TABLE}.customer_id ;;
+  }
+
+  <span class="k">dimension</span>: region {
+    <span class="k">label</span>: <span class="s">"Customer region"</span>
+    <span class="k">sql</span>: ${TABLE}.region ;;
+  }
+}</pre>
+<pre class="code" data-code="model" hidden><span class="k">connection</span>: <span class="s">"bq_acme_analytics"</span>
+
+<span class="k">include</span>: <span class="s">"/views/*.view.lkml"</span>
+<span class="k">include</span>: <span class="s">"/dashboards/*.dashboard.lookml"</span>
+
+<span class="k">explore</span>: orders {
+  <span class="k">sql_always_where</span>: ${orders.status} != <span class="s">'cancelled'</span> ;;
+  <span class="k">join</span>: customers {
+    <span class="k">type</span>: left_outer
+    <span class="k">relationship</span>: many_to_one
+    <span class="k">sql_on</span>: ${orders.customer_id} = ${customers.customer_id} ;;
+  }
+}</pre>
+<pre class="code" data-code="dash" hidden>- <span class="k">dashboard</span>: monthly_sales
+  <span class="k">title</span>: <span class="s">Monthly Sales by Region</span>
+  <span class="k">layout</span>: newspaper
+  <span class="k">elements</span>:
+  - <span class="k">title</span>: <span class="s">Total revenue</span>
+    <span class="k">model</span>: sales
+    <span class="k">explore</span>: orders
+    <span class="k">type</span>: single_value
+    <span class="k">fields</span>: [orders.total_revenue]
+  - <span class="k">title</span>: <span class="s">Revenue by month</span>
+    <span class="k">model</span>: sales
+    <span class="k">explore</span>: orders
+    <span class="k">type</span>: looker_line
+    <span class="k">fields</span>: [orders.created_month, orders.total_revenue]
+  - <span class="k">title</span>: <span class="s">Revenue by region</span>
+    <span class="k">model</span>: sales
+    <span class="k">explore</span>: orders
+    <span class="k">type</span>: looker_bar
+    <span class="k">fields</span>: [customers.region, orders.total_revenue]</pre>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <span class="muted small">Validated in Looker · 09:45</span>
+      <span class="actions">
+        <button class="btn" type="button"><svg><use href="#i-dl"/></svg> .zip</button>
+        <button class="btn primary" type="button">Send to Looker</button>
+      </span>
+    </div>
+  </aside>
+
+  <!-- ================= SETTINGS SHEET ================= -->
+  <aside class="sheet" id="prefSheet" hidden aria-label="Settings">
+    <div class="sheet-head">
+      <div><span class="label">Settings</span><h2>Your preferences</h2></div>
+      <button class="icon-btn" type="button" id="prefClose" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <details class="acc" open>
+        <summary><span class="sum-text"><h3>Looker connections</h3><small>3 saved · Acme Looker (Production) is your default</small></span></summary>
+        <div class="acc-body">
+          <div>
+            <div class="row"><div><strong>Acme Looker (Production)</strong> <span class="pill accent">Default</span><small>acme.cloud.looker.com · “bq_acme_analytics” · standard folders</small></div><span class="pill ok">Connected</span>
+              <div class="row-btns"><button class="btn sm quiet" type="button">Test</button><button class="btn sm quiet" type="button">Edit</button></div></div>
+            <div class="row"><div><strong>Acme Looker (Development)</strong><small>acme-dev.cloud.looker.com · “bq_acme_dev” · all files in one folder</small></div><span class="pill">Not tested</span>
+              <div class="row-btns"><button class="btn sm quiet" type="button">Test</button><button class="btn sm quiet" type="button">Edit</button><button class="btn sm quiet" type="button">Remove</button></div></div>
+            <div class="row"><div><strong>Finance Looker</strong> <span class="pill">Shared by admin</span><small>acme-fin.cloud.looker.com · “bq_finance” · standard folders</small></div><span class="pill warn">Key expires in 6 days</span>
+              <div class="row-btns"><button class="btn sm quiet" type="button">Test</button><button class="btn sm quiet" type="button">View</button></div></div>
+          </div>
+          <button class="btn sm" type="button" id="addConnBtn" style="align-self:flex-start"><svg><use href="#i-plus"/></svg> Add connection</button>
+          <div class="form" id="addConn" hidden>
+            <div class="fields">
+              <div class="field"><label for="acName">Name</label><input id="acName" placeholder="e.g. Finance Looker"></div>
+              <div class="field"><label for="acUrl">Looker address</label><input id="acUrl" placeholder="https://yourcompany.cloud.looker.com"></div>
+              <div class="field"><label for="acBq">BigQuery connection in Looker</label><input id="acBq"></div>
+              <div class="field"><label for="acLayout">Folder layout</label><select id="acLayout"><option>views/ models/ dashboards/ (standard)</option><option>All files in one folder</option></select></div>
+              <div class="field"><label for="acId">API client ID</label><input id="acId" autocomplete="off"></div>
+              <div class="field"><label for="acSecret">API client secret</label><input id="acSecret" type="password" autocomplete="new-password"></div>
+            </div>
+            <div class="actions"><button class="btn sm" type="button">Test</button><button class="btn sm primary" type="button">Save</button><button class="btn sm quiet" type="button" id="addConnCancel">Cancel</button></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary><span class="sum-text"><h3>AI assistant (Cortex)</h3><small>Connected · 420 ms</small></span><span class="pill ok">OK</span></summary>
+        <div class="acc-body">
+          <div class="fields">
+            <div class="field wide"><label for="cxUrl">Cortex endpoint address</label><input id="cxUrl" value="https://cortex.internal.acme.com/v1/chat"><span class="hint">The proxy address from your platform team</span></div>
+            <div class="field"><label for="cxAuth">Sign-in method</label><select id="cxAuth"><option>API key</option><option>Company sign-in (SSO token)</option><option>Service account</option></select></div>
+            <div class="field"><label for="cxKey">API key</label><input id="cxKey" type="password" value="••••••••••••" autocomplete="off"></div>
+            <div class="field"><label for="cxModel">AI model</label><select id="cxModel"><option>Default (recommended)</option><option>Fast</option><option>Most capable</option></select></div>
+            <div class="field"><label for="cxTimeout">Time limit per request</label><select id="cxTimeout"><option>30 seconds</option><option selected>60 seconds</option><option>120 seconds</option></select></div>
+          </div>
+          <details class="dev">
+            <summary>Advanced (headers, proxy, retries)</summary>
+            <div class="fields">
+              <div class="field"><label for="cxHeaders">Extra request headers</label><input id="cxHeaders" placeholder="X-Team-Id: analytics"></div>
+              <div class="field"><label for="cxRetries">Retries on failure</label><select id="cxRetries"><option>0</option><option selected>2</option><option>3</option></select></div>
+              <div class="field"><label for="cxProxy">HTTPS proxy</label><input id="cxProxy" placeholder="http://proxy.acme.com:8080"></div>
+              <div class="field"><label for="cxCa">Custom CA certificate</label><input id="cxCa" placeholder="/etc/ssl/acme-root.pem"></div>
+            </div>
+          </details>
+          <div class="actions"><button class="btn sm" type="button">Test connection</button><button class="btn sm primary" type="button">Save</button></div>
+          <div class="note"><b>C1</b>Likely admin-only in production. Fields will match the Cortex client config.</div>
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary><span class="sum-text"><h3>Appearance and behaviour</h3><small>Theme, code view, plan confirmation</small></span></summary>
+        <div class="acc-body">
+          <div class="q"><span>Theme</span>
+            <div class="choice" id="themeChoice">
+              <label for="thLight"><input type="radio" name="theme" id="thLight" value="light"><span>Light</span></label>
+              <label for="thDark"><input type="radio" name="theme" id="thDark" value="dark"><span>Dark</span></label>
+              <label for="thSys"><input type="radio" name="theme" id="thSys" value="system"><span>Match my computer</span></label>
+            </div>
+          </div>
+          <div>
+            <div class="row"><label for="prefCode"><strong>Open packages on the Files tab</strong><small>For Looker developers who want the code first</small></label><span class="switch"><input type="checkbox" id="prefCode"><i></i></span></div>
+            <div class="row"><label for="prefPlan"><strong>Confirm the plan before building</strong><small>Recommended. The assistant waits for your OK.</small></label><span class="switch"><input type="checkbox" id="prefPlan" checked><i></i></span></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary><span class="sum-text"><h3>Defaults for new sessions</h3><small>Acme Analytics · Sales data · Acme Looker (Production)</small></span></summary>
+        <div class="acc-body">
+          <div class="fields">
+            <div class="field"><label for="dfProj">Google Cloud project</label><select id="dfProj"><option>Acme Analytics (acme-analytics)</option><option>Acme Operations (acme-ops)</option></select></div>
+            <div class="field"><label for="dfDs">Dataset</label><select id="dfDs"><option>Sales data (sales)</option><option>None, ask me each time</option></select></div>
+            <div class="field"><label for="dfConn">Looker connection</label><select id="dfConn"><option>Acme Looker (Production)</option><option>Acme Looker (Development)</option></select></div>
+            <div class="field"><label for="dfKeep">Keep sessions for</label><select id="dfKeep"><option>90 days</option><option>1 year</option><option>Forever</option></select></div>
+          </div>
+        </div>
+      </details>
+      <div class="note"><b>C2</b>Settings is a sheet over whatever you were doing, not a separate page. Each section shows its current state in the header, so most people never need to open it.</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  var routes = {
+    home: { view: "home" }, chat: { view: "chat" },
+    start: { view: "home", sheet: "setupDlg", back: "#home" },
+    package: { view: "chat", sheet: "pkgSheet", back: "#chat" },
+    prefs: { keep: true, sheet: "prefSheet" } // opens over whatever page is active
+  };
+  var baseView = "home", baseKey = "home";
+  var tickets = {
+    chat: "<b>Sales data</b> · 3 tables → Acme Looker (Production)",
+    package: "<b>Sales data</b> · 3 tables → Acme Looker (Production)"
+  };
+  var scrim = document.getElementById("scrim");
+  var current = routes.home;
+
+  // Use the official brand logo when the file is present; otherwise keep the neutral mark
+  var logo = new Image();
+  logo.alt = "";
+  logo.onload = function () { var m = document.getElementById("brandMark"); m.textContent = ""; m.appendChild(logo); m.classList.add("logo"); };
+  logo.src = "assets/brand-logo.svg";
+
+  // New session dialog: two steps
+  var steps = {
+    1: { title: "Which data should we use?", hint: "✓ You have access to this data" },
+    2: { title: "Where will this be used in Looker?", hint: "These settings stay fixed for this session" }
+  };
+  function setStep(n) {
+    document.querySelectorAll("#setupDlg [data-step]").forEach(function (p) { p.hidden = p.dataset.step !== String(n); p.scrollTop = 0; });
+    document.querySelectorAll("#setupDlg [data-bar]").forEach(function (b) { b.classList.toggle("on", Number(b.dataset.bar) <= n); });
+    document.getElementById("dlgStepLabel").textContent = "Step " + n + " of 2";
+    document.getElementById("dlgTitle").textContent = steps[n].title;
+    document.getElementById("dlgHint").textContent = steps[n].hint;
+    document.getElementById("dlgBack").hidden = n === 1;
+    document.getElementById("dlgNext").hidden = n === 2;
+    document.getElementById("dlgStart").hidden = n === 1;
+  }
+  document.getElementById("dlgNext").addEventListener("click", function () { setStep(2); });
+  document.getElementById("dlgBack").addEventListener("click", function () { setStep(1); });
+  function show() {
+    var key = (location.hash || "#home").slice(1);
+    if (!routes[key]) key = "home";
+    current = routes[key];
+    if (current.keep) {
+      current.back = "#" + baseKey;
+    } else {
+      baseView = current.view;
+      baseKey = current.sheet ? current.back.slice(1) : key;
+    }
+    var view = current.keep ? baseView : current.view;
+    document.querySelectorAll("[data-view]").forEach(function (v) { v.hidden = v.dataset.view !== view; });
+    ["pkgSheet", "prefSheet", "setupDlg"].forEach(function (id) { document.getElementById(id).hidden = current.sheet !== id; });
+    if (current.sheet === "setupDlg") setStep(1);
+    scrim.hidden = !current.sheet;
+    document.querySelectorAll("[data-route]").forEach(function (a) {
+      if (a.dataset.route === key) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+    var tk = current.keep ? baseKey : key;
+    var t = document.getElementById("topTicket");
+    t.hidden = !tickets[tk];
+    if (tickets[tk]) document.getElementById("topTicketText").innerHTML = tickets[tk];
+  }
+  window.addEventListener("hashchange", show);
+  show();
+  scrim.addEventListener("click", function () { if (current.back) location.hash = current.back; });
+  document.getElementById("prefClose").addEventListener("click", function () { location.hash = current.back || "#home"; });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && current.back) location.hash = current.back; });
+
+  var notesToggle = document.getElementById("notesToggle");
+  function notes() { document.body.classList.toggle("notes-on", notesToggle.checked); }
+  notesToggle.addEventListener("change", notes); notes();
+
+  // Theme
+  var root = document.documentElement, themeBtn = document.getElementById("themeBtn");
+  var mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function applyTheme(pref) {
+    if (pref === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", pref);
+    document.querySelectorAll('input[name="theme"]').forEach(function (r) { r.checked = r.value === pref; });
+    var dark = pref === "dark" || (pref === "system" && mq && mq.matches);
+    themeBtn.querySelector("use").setAttribute("href", dark ? "#i-sun" : "#i-moon");
+    themeBtn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    try { localStorage.setItem("lh-theme", pref); } catch (e) {}
+  }
+  var saved = null; try { saved = localStorage.getItem("lh-theme"); } catch (e) {}
+  applyTheme(saved || "system");
+  themeBtn.addEventListener("click", function () {
+    var cur = root.getAttribute("data-theme") || (mq && mq.matches ? "dark" : "light");
+    applyTheme(cur === "dark" ? "light" : "dark");
+  });
+  document.querySelectorAll('input[name="theme"]').forEach(function (r) { r.addEventListener("change", function () { applyTheme(r.value); }); });
+
+  // Home: example chips, search, status filter
+  var ask = document.getElementById("homeAsk");
+  document.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () { ask.value = b.dataset.ex; ask.focus(); }); });
+  var filter = "all", search = document.getElementById("workSearch");
+  function applyFilter() {
+    var q = search.value.toLowerCase();
+    document.querySelectorAll("#shelf .pkg[data-status]").forEach(function (c) {
+      c.hidden = !((filter === "all" || c.dataset.status === filter) && c.textContent.toLowerCase().indexOf(q) >= 0);
+    });
+  }
+  search.addEventListener("input", applyFilter);
+  document.querySelectorAll("[data-filter]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      filter = b.dataset.filter;
+      document.querySelectorAll("[data-filter]").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      applyFilter();
+    });
+  });
+
+  // Dashboard thumbnails (layout sketches)
+  var kpis = '<rect class="tbg" x="0" y="0" width="160" height="90" rx="6"/><rect class="t3" x="8" y="8" width="44" height="16" rx="3"/><rect class="t3" x="58" y="8" width="44" height="16" rx="3"/><rect class="t3" x="108" y="8" width="44" height="16" rx="3"/>';
+  var thumbs = {
+    line: kpis + '<polyline class="tl" points="10,78 26,70 42,72 58,60 74,63 90,50 106,53 122,42 138,40 150,32"/>',
+    area: kpis + '<path class="t2" d="M8 82 L30 66 L52 70 L74 56 L96 60 L118 46 L152 40 L152 82 Z"/>',
+    bars: kpis + '<rect class="t1" x="12" y="40" width="16" height="42" rx="2"/><rect class="t1" x="36" y="50" width="16" height="32" rx="2"/><rect class="t2" x="60" y="58" width="16" height="24" rx="2"/><rect class="t2" x="84" y="64" width="16" height="18" rx="2"/><rect class="t3" x="108" y="70" width="16" height="12" rx="2"/><rect class="t3" x="132" y="74" width="16" height="8" rx="2"/>',
+    table: '<rect class="tbg" x="0" y="0" width="160" height="90" rx="6"/><rect class="t2" x="8" y="8" width="144" height="10" rx="2"/><rect class="t3" x="8" y="24" width="144" height="8" rx="2"/><rect class="t3" x="8" y="38" width="144" height="8" rx="2"/><rect class="t3" x="8" y="52" width="144" height="8" rx="2"/><rect class="t3" x="8" y="66" width="100" height="8" rx="2"/>'
+  };
+  document.querySelectorAll("[data-thumb]").forEach(function (el) {
+    el.innerHTML = '<svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + thumbs[el.dataset.thumb] + "</svg>";
+  });
+
+  // Setup: table count, new Looker connection
+  var tiles = document.getElementById("tblTiles");
+  tiles.addEventListener("change", function () { document.getElementById("tblCount").textContent = tiles.querySelectorAll("input:checked").length; });
+  var newConn = document.getElementById("newConn");
+  document.querySelectorAll('input[name="conn"]').forEach(function (r) {
+    r.addEventListener("change", function () { newConn.hidden = !document.getElementById("cNew").checked; });
+  });
+  document.getElementById("ncTest").addEventListener("click", function () { document.getElementById("ncOk").hidden = false; });
+
+  // Package sheet tabs + file tabs + copy
+  document.querySelectorAll("[data-pane]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("[data-pane]").forEach(function (x) {
+        x.setAttribute("aria-pressed", x === b ? "true" : "false");
+        document.querySelector('[data-panel="' + x.dataset.pane + '"]').hidden = x !== b;
+      });
+    });
+  });
+  var meta = { orders: "views/orders.view.lkml · version 2", customers: "views/customers.view.lkml · version 1", model: "models/sales.model.lkml · version 2", dash: "dashboards/monthly_sales.dashboard.lookml · version 1" };
+  var file = "orders";
+  document.querySelectorAll("[data-file]").forEach(function (t) {
+    t.addEventListener("click", function () {
+      file = t.dataset.file;
+      document.querySelectorAll("[data-file]").forEach(function (x) { x.setAttribute("aria-selected", x === t ? "true" : "false"); });
+      document.querySelectorAll("[data-code]").forEach(function (p) { p.hidden = p.dataset.code !== file; });
+      document.getElementById("fileMeta").textContent = meta[file];
+    });
+  });
+  var copyBtn = document.getElementById("copyBtn");
+  copyBtn.addEventListener("click", function () {
+    var text = document.querySelector('[data-code="' + file + '"]').textContent;
+    function done(m) { copyBtn.textContent = m; setTimeout(function () { copyBtn.textContent = "Copy"; }, 1400); }
+    try { navigator.clipboard.writeText(text).then(function () { done("Copied"); }, function () { done("Select and copy"); }); } catch (e) { done("Select and copy"); }
+  });
+
+  // Settings: add connection
+  var addConn = document.getElementById("addConn");
+  document.getElementById("addConnBtn").addEventListener("click", function () { addConn.hidden = false; document.getElementById("acName").focus(); });
+  document.getElementById("addConnCancel").addEventListener("click", function () { addConn.hidden = true; });
+})();
+</script>

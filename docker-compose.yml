@@ -1,0 +1,58 @@
+# Everything runs in the same image, with the embedded PostgreSQL inside it.
+#
+#   docker compose up --build -d                   the app, as deployed        http://localhost:8000
+#   docker compose --profile dev up --build dev    development: code mounted, reloads on save   http://localhost:8001
+#   docker compose run --rm --build tests          run the tests against a throwaway database
+services:
+  looker-helper:
+    build:
+      context: .
+      target: production
+    image: looker-helper:latest
+    container_name: looker-helper
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - lh-data:/data
+    restart: unless-stopped
+
+  dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      target: production
+    image: looker-helper:latest
+    container_name: looker-helper-dev
+    ports:
+      - "8001:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      LH_RELOAD: "1"
+      WATCHFILES_FORCE_POLLING: "true"  # file events don't cross Windows bind mounts
+    volumes:
+      - lh-dev-data:/data
+      - ./app:/app/app
+      - ./static:/app/static
+      - ./migrations:/app/migrations
+
+  tests:
+    profiles: ["test"]
+    build:
+      context: .
+      target: test
+    image: looker-helper:test
+    tmpfs:
+      - /data  # fresh, throwaway PostgreSQL for every run
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+      - ./migrations:/app/migrations
+
+volumes:
+  lh-data:
+  lh-dev-data:

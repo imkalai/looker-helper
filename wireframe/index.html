@@ -1,0 +1,1208 @@
+<title>Looker Helper Wireframe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: friendly app shell — left rail + main canvas; session screen splits chat | result (Preview first, Code on request). Review notes overlay as amber pins. */
+:root {
+  --bg: #f4f7f5; --surface: #ffffff; --ink: #17221d; --muted: #5a6a63; --line: #dbe3df;
+  --sunken: #eff4f1; --accent: #006a4d; --accent-soft: #e2f0ea; --on-accent: #ffffff;
+  --ok: #1f7a3a; --ok-soft: #e3f3e6; --warn: #9a5b00; --warn-soft: #fbefd9;
+  --viz-1: #006a4d; --viz-2: #8fc9b2;
+  --note-bg: #fff3bf; --note-ink: #4f3b00; --note-line: #e8c95a;
+  --code-bg: #f0f2f6; --code-key: #7a3cb3; --code-str: #1d7a52;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1513; --surface: #171e1b; --ink: #e4ebe7; --muted: #96a69f; --line: #28342f;
+  --sunken: #131a17; --accent: #3fbf8a; --accent-soft: #15332a; --on-accent: #04201a;
+  --ok: #7ad69a; --ok-soft: #1a3322; --warn: #f0b35a; --warn-soft: #3a2b12;
+  --viz-1: #3fbf8a; --viz-2: #2a5a49;
+  --note-bg: #3a3112; --note-ink: #f4dd8c; --note-line: #6b5a1c;
+  --code-bg: #0f1217; --code-key: #c79bf2; --code-str: #7fd1a6;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f1513; --surface: #171e1b; --ink: #e4ebe7; --muted: #96a69f; --line: #28342f;
+  --sunken: #131a17; --accent: #3fbf8a; --accent-soft: #15332a; --on-accent: #04201a;
+  --ok: #7ad69a; --ok-soft: #1a3322; --warn: #f0b35a; --warn-soft: #3a2b12;
+  --viz-1: #3fbf8a; --viz-2: #2a5a49;
+  --note-bg: #3a3112; --note-ink: #f4dd8c; --note-line: #6b5a1c;
+  --code-bg: #0f1217; --code-key: #c79bf2; --code-str: #7fd1a6;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+/* Viewport-fitted shell: the page never grows; rail, main and session panes scroll on their own */
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 600; }
+h1 { font-size: 1.6rem; line-height: 1.25; }
+h2 { font-size: 1.08rem; }
+h3 { font-size: .95rem; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-size: .85em; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.label { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
+
+/* Review toolbar (not part of the product) */
+.review {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  flex: none; margin: 0 0 10px; padding: 8px 12px;
+  border: 1px dashed var(--line); border-radius: 6px; font-size: .8rem;
+}
+.review nav { display: flex; flex-wrap: wrap; gap: 4px; }
+.review a { color: var(--muted); text-decoration: none; padding: 3px 9px; border-radius: 99px; }
+.review a[aria-current="page"] { background: var(--ink); color: var(--bg); }
+.review label { display: inline-flex; gap: 6px; align-items: center; margin-left: auto; cursor: pointer; }
+
+/* App shell */
+.shell {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: clamp(200px, 16vw, 260px) minmax(0, 1fr);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+}
+.rail { border-right: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 18px; background: var(--sunken); min-height: 0; overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 0 6px; }
+.brand-mark { width: 26px; height: 26px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; font: 600 13px var(--sans); color: var(--on-accent); }
+.rail nav { display: flex; flex-direction: column; gap: 2px; }
+.rail nav a { display: flex; justify-content: space-between; padding: 8px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+.rail nav a:hover { background: var(--surface); }
+.rail nav a.on { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font-weight: 500; }
+.rail .count { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.rail-recent { display: flex; flex-direction: column; gap: 2px; }
+.rail-recent a { padding: 5px 10px; font-size: .85rem; color: var(--muted); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 8px; }
+.rail-recent a:hover { color: var(--ink); background: var(--surface); }
+.rail-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; font-size: .82rem; }
+.user { display: flex; align-items: center; gap: 8px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 600; font-size: .75rem; }
+.status { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+
+.main { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
+.screen { flex: none; padding: 28px 32px; display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+/* Screens that fill the window and scroll inside their own panes */
+.screen.fit { flex: 1 0 auto; }
+.session-view { flex: 1 1 0; min-height: 440px; display: flex; flex-direction: column; min-width: 0; }
+.screen-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); text-decoration: none; color: var(--ink); font-weight: 500; font-size: .9rem; white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.sm { padding: 5px 12px; font-size: .82rem; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent); }
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 1px 9px; border-radius: 99px; font-size: .76rem; background: var(--sunken); color: var(--muted); white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.accent { background: var(--accent-soft); color: var(--accent); }
+
+.panel { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+
+/* Review notes */
+.note {
+  display: none; position: relative; background: var(--note-bg); color: var(--note-ink);
+  border: 1px solid var(--note-line); border-radius: 4px; padding: 6px 10px 6px 34px;
+  font-size: .78rem; line-height: 1.4; max-width: 64ch;
+}
+.note b { position: absolute; left: 8px; top: 6px; font: 600 .72rem var(--mono); }
+body.notes-on .note { display: block; }
+
+/* HOME */
+.ask { display: flex; flex-direction: column; gap: 12px; padding: 22px; border-radius: 14px; background: var(--accent-soft); }
+.ask h2 { font-size: 1.2rem; }
+.ask-row { display: flex; gap: 8px; }
+.ask-row input { flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.examples { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .82rem; }
+.examples button { padding: 4px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-size: .82rem; }
+.examples button:hover { border-color: var(--accent); color: var(--accent); }
+.home-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 20px; flex: 1 1 0; min-height: 280px; }
+.home-grid > .panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.home-grid .panel-head, .home-grid .note { flex: none; }
+.home-grid .list { flex: 1; min-height: 0; overflow-y: auto; }
+.list { list-style: none; margin: 0; padding: 0; }
+.list > li { border-bottom: 1px solid var(--line); }
+.list > li:last-child { border-bottom: 0; }
+.sess { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; padding: 14px 18px; text-decoration: none; color: inherit; }
+.sess:hover { background: var(--sunken); }
+.sess .title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sess .sub { color: var(--muted); font-size: .84rem; grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sess time { color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.bundle { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 18px; }
+.zip { width: 40px; height: 40px; border-radius: 9px; background: var(--sunken); border: 1px solid var(--line); display: grid; place-items: center; color: var(--accent); }
+.zip svg { width: 20px; height: 20px; }
+.bundle .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bundle small { display: block; color: var(--muted); font-size: .8rem; }
+
+/* NEW SESSION */
+.setup { max-width: 720px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.steps { display: flex; gap: 8px; list-style: none; padding: 0; margin: 0; flex-wrap: wrap; }
+.steps li { display: flex; align-items: center; gap: 8px; font-size: .86rem; color: var(--muted); }
+.steps li::after { content: ""; width: 28px; height: 1px; background: var(--line); }
+.steps li:last-child::after { display: none; }
+.steps span { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: .78rem; font-weight: 500; }
+.steps li.done span { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.steps li.cur { color: var(--ink); font-weight: 500; }
+.steps li.cur span { border-color: var(--accent); color: var(--accent); }
+.form-sec { display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+.form-sec + .form-sec { border-top: 1px solid var(--line); }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field label { font-size: .86rem; font-weight: 500; }
+.field input, .field select { padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+.field .hint { font-size: .78rem; color: var(--muted); }
+.tables { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; max-height: 290px; overflow: auto; }
+.trow { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start; padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.trow:last-child { border-bottom: 0; }
+.trow:hover { background: var(--sunken); }
+.trow input { margin-top: 4px; }
+.trow strong { font-weight: 500; }
+.trow .desc { grid-column: 2 / 3; color: var(--muted); font-size: .82rem; }
+.trow small { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+details.adv summary { cursor: pointer; color: var(--accent); font-size: .88rem; font-weight: 500; }
+details.adv[open] summary { margin-bottom: 14px; }
+.setup-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); background: var(--sunken); border-radius: 0 0 var(--r) var(--r); font-size: .86rem; }
+
+/* SESSION */
+.ctxbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 22px; border-bottom: 1px solid var(--line); }
+.ctxbar .src { display: inline-flex; gap: 6px; align-items: center; padding: 3px 12px; border-radius: 99px; background: var(--sunken); font-size: .84rem; color: var(--muted); min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctxbar .spacer { flex: 1; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); grid-template-rows: minmax(0, 1fr); flex: 1; min-height: 0; }
+.chat { display: flex; flex-direction: column; border-right: 1px solid var(--line); min-width: 0; min-height: 0; }
+.thread { flex: 1; min-height: 0; padding: 22px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.ctxbar, .composer, .session-view > .note { flex: none; }
+.msg { display: flex; flex-direction: column; gap: 6px; max-width: 92%; min-width: 0; }
+.msg .who { font-size: .74rem; color: var(--muted); }
+.msg .bubble { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
+.msg.user { align-self: flex-end; align-items: flex-end; }
+.msg.user .bubble { background: var(--accent-soft); border-color: transparent; }
+.plan { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.plan h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
+.plan ul { margin: 4px 0 0; padding-left: 18px; font-size: .9rem; }
+.plan li span { color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.thinking { display: flex; gap: 8px; align-items: center; font-size: .82rem; color: var(--muted); }
+.thinking i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+.thinking i:nth-child(2) { animation-delay: .2s; } .thinking i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 100% { opacity: .25 } 50% { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .thinking i { animation: none; } }
+.composer { border-top: 1px solid var(--line); padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+.suggest { display: flex; gap: 6px; flex-wrap: wrap; }
+.suggest button { padding: 4px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-size: .82rem; color: var(--muted); }
+.suggest button:hover { color: var(--accent); border-color: var(--accent); }
+.input { display: flex; gap: 8px; align-items: end; border: 1px solid var(--line); border-radius: 12px; padding: 8px; background: var(--surface); }
+.input textarea { flex: 1; min-width: 0; border: 0; resize: none; background: transparent; outline: none; min-height: 46px; padding: 4px 6px; }
+
+.result { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: var(--sunken); }
+.result-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.seg { display: inline-flex; padding: 3px; border-radius: 9px; background: var(--sunken); border: 1px solid var(--line); }
+.seg button { padding: 5px 14px; border: 0; border-radius: 7px; background: transparent; font-size: .85rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.preview { flex: 1; min-height: 0; padding: 18px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.preview > * { flex: none; }
+.dash { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.dash-title { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.kpi span { font-size: .74rem; color: var(--muted); display: block; }
+.kpi strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.charts { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px; }
+.chart { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.chart span { font-size: .74rem; color: var(--muted); }
+.chart svg { display: block; width: 100%; height: 96px; }
+.sample { font-size: .74rem; color: var(--muted); }
+.metrics { display: flex; flex-direction: column; }
+.metric { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.metric:last-child { border-bottom: 0; }
+.metric strong { font-weight: 500; }
+.metric p { grid-column: 1 / -1; color: var(--muted); font-size: .84rem; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: .84rem; }
+
+.codeview { display: flex; flex-direction: column; min-width: 0; min-height: 0; flex: 1; }
+.codeview > .tabs, .codeview > .file-tools, .codeview > .note { flex: none; }
+.tabs { display: flex; gap: 2px; padding: 8px 12px 0; border-bottom: 1px solid var(--line); overflow-x: auto; background: var(--surface); }
+.tabs button { padding: 7px 12px; border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; background: transparent; font: .78rem var(--mono); color: var(--muted); white-space: nowrap; }
+.tabs button[aria-selected="true"] { background: var(--code-bg); border-color: var(--line); color: var(--ink); margin-bottom: -1px; }
+.file-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--line); font-size: .8rem; background: var(--code-bg); }
+.code { margin: 0; padding: 14px 16px; overflow: auto; min-height: 0; font: .78rem/1.6 var(--mono); background: var(--code-bg); flex: 1; tab-size: 2; }
+.code .k { color: var(--code-key); } .code .s { color: var(--code-str); }
+
+/* LIBRARY */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filters input, .filters select { padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.filters input { flex: 1; min-width: 160px; }
+.lib { display: flex; flex-direction: column; gap: 12px; }
+.lib-card { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.lib-top { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 16px 18px; }
+.lib-top h2 { font-size: 1rem; }
+.lib-top .sub { color: var(--muted); font-size: .84rem; }
+.lib-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.lib-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: end; }
+.lib-card details { border-top: 1px solid var(--line); }
+.lib-card summary { cursor: pointer; padding: 10px 18px; font-size: .84rem; color: var(--accent); font-weight: 500; }
+.fl { list-style: none; margin: 0; padding: 0 18px 12px; display: flex; flex-direction: column; gap: 6px; }
+.fl li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; font-size: .84rem; }
+.fl .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fl span:last-child { color: var(--muted); }
+
+/* Looker connection picker (setup) */
+.conn-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; }
+.conn-opt { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.conn-opt:last-child { border-bottom: 0; }
+.conn-opt:hover { background: var(--sunken); }
+.conn-opt:has(input:checked) { background: var(--accent-soft); }
+.conn-opt strong { font-weight: 500; display: block; }
+.conn-opt small, .conn-row small { display: block; color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+.conn-opt.new strong { color: var(--accent); }
+.conn-form { display: flex; flex-direction: column; gap: 14px; padding: 16px; border: 1px dashed var(--accent); border-radius: 8px; background: var(--sunken); }
+.form-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.check { display: inline-flex; gap: 8px; align-items: center; font-size: .88rem; cursor: pointer; }
+.test-ok { color: var(--ok); font-size: .84rem; }
+
+/* SETTINGS */
+.prefs { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 28px; align-items: start; }
+.subnav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 12px; }
+.subnav button { text-align: left; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
+.subnav button:hover { color: var(--ink); background: var(--sunken); }
+.subnav button[aria-current="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.pref-panel { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.pref-panel > p { max-width: 64ch; }
+.conn-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 14px; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.conn-row:last-child { border-bottom: 0; }
+.conn-row strong { font-weight: 500; }
+.conn-row .row-btns { display: flex; gap: 4px; }
+.theme-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.theme-card { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; }
+.theme-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.theme-card span.lbl { display: flex; gap: 8px; align-items: center; font-size: .9rem; font-weight: 500; }
+.swatch { height: 64px; border-radius: 6px; display: grid; grid-template-columns: 30% 1fr; overflow: hidden; border: 1px solid var(--line); }
+.swatch i { display: block; }
+.sw-light i:first-child { background: #eff4f1; } .sw-light i:last-child { background: #ffffff; box-shadow: inset 0 18px 0 -8px #e2f0ea; }
+.sw-dark i:first-child { background: #131a17; } .sw-dark i:last-child { background: #171e1b; box-shadow: inset 0 18px 0 -8px #15332a; }
+.sw-sys i:first-child { background: linear-gradient(135deg, #eff4f1 50%, #131a17 50%); } .sw-sys i:last-child { background: linear-gradient(135deg, #ffffff 50%, #171e1b 50%); }
+.toggle-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.toggle-row:last-child { border-bottom: 0; }
+.toggle-row p { color: var(--muted); font-size: .84rem; }
+.theme-btn { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: .82rem; }
+.theme-btn svg { width: 15px; height: 15px; }
+
+/* Short windows: let the main area scroll as a whole instead of squeezing the panes */
+@media (max-height: 640px) {
+  .session-view { flex: none; height: 640px; }
+}
+@media (max-width: 1040px) {
+  .split { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; flex: none; }
+  .session-view { flex: none; min-height: 0; }
+  .chat { border-right: 0; border-bottom: 1px solid var(--line); }
+  .thread { flex: none; max-height: 55vh; }
+  .result { overflow: visible; }
+  .preview, .code { flex: none; max-height: 70vh; }
+  .home-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; flex: none; }
+  .home-grid .list { max-height: 320px; }
+}
+@media (max-width: 760px) {
+  html, body { height: auto; }
+  body { overflow: visible; display: block; }
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .main { overflow: visible; }
+  .rail { overflow: visible; }
+  .rail { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .rail nav { flex-direction: row; flex-wrap: wrap; }
+  .rail-recent, .rail-foot .status { display: none; }
+  .rail-foot { margin: 0 0 0 auto; }
+  .screen { padding: 20px 16px; }
+  .fields { grid-template-columns: minmax(0, 1fr); }
+  .ask-row { flex-direction: column; }
+  .msg { max-width: 100%; }
+  .kpis, .charts { grid-template-columns: minmax(0, 1fr); }
+  .lib-top { grid-template-columns: 40px minmax(0, 1fr); }
+  .lib-btns { grid-column: 1 / -1; justify-content: start; }
+  .prefs { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .subnav { position: static; flex-direction: row; flex-wrap: wrap; }
+  .theme-cards { grid-template-columns: minmax(0, 1fr); }
+  .conn-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .conn-row .row-btns { grid-column: 1 / -1; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-zip" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z M14 3v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 6h2M10 9h2M10 12h2M10 15h2v3h-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+</svg>
+
+<div class="review" role="region" aria-label="Wireframe review controls">
+  <strong>Wireframe v0.3</strong>
+  <nav aria-label="Screens">
+    <a href="#home" data-route="home">1 · Home</a>
+    <a href="#new-session" data-route="new-session">2 · New session</a>
+    <a href="#session" data-route="session">3 · Session chat</a>
+    <a href="#library" data-route="library">4 · My files</a>
+    <a href="#preferences" data-route="preferences">5 · Settings</a>
+  </nav>
+  <label for="notesToggle"><input type="checkbox" id="notesToggle" checked> Show review notes</label>
+</div>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand"><span class="brand-mark">L</span> Looker Helper</div>
+    <a class="btn primary" href="#new-session">+ New session</a>
+    <nav aria-label="Main">
+      <a href="#home" data-nav="home">Home</a>
+      <a href="#session" data-nav="session">My sessions <span class="count">12</span></a>
+      <a href="#library" data-nav="library">My files <span class="count">12</span></a>
+      <a href="#preferences" data-nav="preferences">Settings</a>
+    </nav>
+    <div class="rail-recent">
+      <span class="label" style="padding:0 10px 4px">Recent</span>
+      <a href="#session">Monthly sales by region</a>
+      <a href="#session">Customer churn</a>
+      <a href="#session">Warehouse stock levels</a>
+      <a href="#session">Marketing funnel</a>
+    </div>
+    <div class="rail-foot">
+      <span class="status" title="AI assistant via the Cortex proxy"><span class="dot"></span> Assistant ready</span>
+      <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch theme"><svg><use href="#i-moon"/></svg><span>Dark theme</span></button>
+      <div class="user"><span class="avatar">KP</span><span>Your profile</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ============ 1. HOME ============ -->
+    <section class="screen fit" data-view="home">
+      <div class="note"><b>H1</b>Personalised per signed-in user. Plain language throughout. Technical terms (LookML, view, explore) only appear where technical users go looking: the Code tab and file lists.</div>
+      <div>
+        <h1>Welcome back</h1>
+        <p class="muted">Describe what you want to see. We'll build the metrics and dashboard for Looker.</p>
+      </div>
+
+      <div class="ask">
+        <label for="homeAsk"><h2>What would you like to measure?</h2></label>
+        <div class="ask-row">
+          <input id="homeAsk" placeholder="e.g. Show me revenue by region for each month">
+          <a class="btn primary" href="#new-session">Get started</a>
+        </div>
+        <div class="examples">
+          <span class="muted">Try:</span>
+          <button data-ex="Sales by region each month">Sales by region each month</button>
+          <button data-ex="Customer churn rate over time">Customer churn over time</button>
+          <button data-ex="Top 10 products by revenue">Top 10 products</button>
+        </div>
+        <div class="note"><b>H2</b>Example chips fill the box. Next you choose which data to use, then this request becomes the first chat message.</div>
+      </div>
+
+      <div class="home-grid">
+        <div class="panel">
+          <div class="panel-head"><h2>Continue where you left off</h2><a class="btn ghost sm" href="#session">See all</a></div>
+          <ul class="list">
+            <li><a class="sess" href="#session">
+              <span class="title">Monthly sales by region</span><time>Today, 09:42</time>
+              <span class="sub">Sales data · 3 tables · <span class="pill ok">Ready</span></span>
+            </a></li>
+            <li><a class="sess" href="#session">
+              <span class="title">Customer churn</span><time>Yesterday</time>
+              <span class="sub">CRM data · 2 tables · <span class="pill ok">Ready</span></span>
+            </a></li>
+            <li><a class="sess" href="#session">
+              <span class="title">Warehouse stock levels</span><time>18 Nov</time>
+              <span class="sub">Warehouse data · 4 tables · <span class="pill warn">Needs a look</span></span>
+            </a></li>
+            <li><a class="sess" href="#session">
+              <span class="title">Marketing funnel</span><time>14 Nov</time>
+              <span class="sub">Web events · 1 table · <span class="pill ok">Ready</span></span>
+            </a></li>
+          </ul>
+          <div class="note" style="margin:0 18px 14px"><b>H3</b>Data source shows the dataset's friendly name (BigQuery dataset description or label). The full project.dataset ID is in a tooltip and in the session bar.</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Recent downloads</h2><a class="btn ghost sm" href="#library">See all</a></div>
+          <ul class="list">
+            <li class="bundle">
+              <span class="zip"><svg><use href="#i-zip"/></svg></span>
+              <span><span class="name">Monthly sales by region</span><small>1 dashboard · 3 metrics · 4 files · 6 KB</small></span>
+              <button class="btn sm"><svg><use href="#i-dl"/></svg> .zip</button>
+            </li>
+            <li class="bundle">
+              <span class="zip"><svg><use href="#i-zip"/></svg></span>
+              <span><span class="name">Customer churn</span><small>1 dashboard · 2 metrics · 3 files · 4 KB</small></span>
+              <button class="btn sm"><svg><use href="#i-dl"/></svg> .zip</button>
+            </li>
+            <li class="bundle">
+              <span class="zip"><svg><use href="#i-zip"/></svg></span>
+              <span><span class="name">Warehouse stock levels</span><small>No dashboard yet · 5 metrics · 4 files · 5 KB</small></span>
+              <button class="btn sm"><svg><use href="#i-dl"/></svg> .zip</button>
+            </li>
+          </ul>
+          <div class="note" style="margin:0 18px 14px"><b>H4</b>One package per session, zipped on the server with the Looker folder layout (views/, models/, dashboards/). Contents are counted in user terms (dashboards, metrics), not file types.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2. NEW SESSION ============ -->
+    <section class="screen" data-view="new-session" hidden>
+      <div class="setup">
+        <div>
+          <h1>Which data should we use?</h1>
+          <p class="muted">This session will only use the data you pick here. Start a new session if you need different data later.</p>
+        </div>
+        <ol class="steps" aria-label="Setup steps">
+          <li class="done"><span>✓</span> Data source</li>
+          <li class="cur"><span>2</span> Tables</li>
+          <li><span>3</span> Looker connection</li>
+          <li><span>4</span> Start</li>
+        </ol>
+        <div class="note"><b>N1</b>Shown at the start of every session. Plain questions with hints. The Looker connection is its own step, and you can create a new one here without leaving setup.</div>
+
+        <div class="panel">
+          <div class="form-sec">
+            <h2>Data source</h2>
+            <div class="fields">
+              <div class="field">
+                <label for="proj">Google Cloud project</label>
+                <select id="proj"><option>Acme Analytics (acme-analytics)</option><option>Acme Operations (acme-ops)</option><option>Acme Marketing (acme-mkt)</option></select>
+                <span class="hint">Only projects you have access to are listed</span>
+              </div>
+              <div class="field">
+                <label for="ds">Dataset</label>
+                <select id="ds"><option>Sales data (sales)</option><option>CRM data (crm)</option><option>Finance (finance)</option></select>
+                <span class="hint">A dataset is a folder of related tables</span>
+              </div>
+            </div>
+            <div class="note"><b>N2</b>Lists come from the BigQuery API with the user's own access. Each option shows its friendly name with the real ID in brackets, so both kinds of users can find theirs.</div>
+          </div>
+
+          <div class="form-sec">
+            <div class="screen-head">
+              <h2>Tables</h2>
+              <span class="muted small"><span id="selCount">3</span> selected</span>
+            </div>
+            <div class="field"><input id="tblSearch" placeholder="Search tables…" aria-label="Search tables"></div>
+            <div class="tables" id="tblList">
+              <label class="trow"><input type="checkbox" checked><strong>Orders</strong><small>2.4M rows</small><span class="desc">One row per customer order, with amount and status</span></label>
+              <label class="trow"><input type="checkbox" checked><strong>Order items</strong><small>9.1M rows</small><span class="desc">Products included in each order</span></label>
+              <label class="trow"><input type="checkbox" checked><strong>Customers</strong><small>310K rows</small><span class="desc">Customer details, including region and signup date</span></label>
+              <label class="trow"><input type="checkbox"><strong>Products</strong><small>8.2K rows</small><span class="desc">Product catalogue with category and price</span></label>
+              <label class="trow"><input type="checkbox"><strong>Regions</strong><small>42 rows</small><span class="desc">Region names and sales territories</span></label>
+              <label class="trow"><input type="checkbox"><strong>Returns</strong><small>61K rows</small><span class="desc">Returned orders and refund reasons</span></label>
+            </div>
+            <p class="muted small">Not sure? Pick the tables your question is about. You can ask the assistant to explain any table once the session starts.</p>
+            <div class="note"><b>N3</b>Descriptions come from BigQuery table descriptions (or a one-line Cortex summary when there is none). On Start, the backend reads column details for the selected tables only and saves them with the session.</div>
+          </div>
+
+          <div class="form-sec">
+            <div class="screen-head">
+              <h2>Looker connection</h2>
+              <a class="btn ghost sm" href="#preferences">Manage connections</a>
+            </div>
+            <p class="muted small">The Looker instance that will use these files. Pick a saved connection or create one.</p>
+            <div class="conn-list" role="radiogroup" aria-label="Looker connection" id="connPick">
+              <label class="conn-opt" for="connProd"><input type="radio" name="connPick" id="connProd" checked>
+                <span><strong>Acme Looker (Production)</strong><small>acme.cloud.looker.com · uses BigQuery connection “bq_acme_analytics”</small></span>
+                <span class="pill ok">Connected</span></label>
+              <label class="conn-opt" for="connDev"><input type="radio" name="connPick" id="connDev">
+                <span><strong>Acme Looker (Development)</strong><small>acme-dev.cloud.looker.com · uses “bq_acme_dev”</small></span>
+                <span class="pill">Not tested</span></label>
+              <label class="conn-opt new" for="connNewRadio"><input type="radio" name="connPick" id="connNewRadio">
+                <span><strong>+ Create a new connection</strong><small>It's saved to your settings for next time</small></span>
+                <span></span></label>
+            </div>
+
+            <div class="conn-form" id="connNew" hidden>
+              <h3>New Looker connection</h3>
+              <div class="fields">
+                <div class="field">
+                  <label for="ncName">Name</label>
+                  <input id="ncName" placeholder="e.g. Finance Looker">
+                  <span class="hint">Any name that helps you recognise it</span>
+                </div>
+                <div class="field">
+                  <label for="ncUrl">Looker address</label>
+                  <input id="ncUrl" placeholder="https://yourcompany.cloud.looker.com">
+                  <span class="hint">The web address you use to open Looker</span>
+                </div>
+                <div class="field">
+                  <label for="ncBq">BigQuery connection in Looker</label>
+                  <input id="ncBq" placeholder="e.g. bq_acme_analytics">
+                  <span class="hint">Found in Looker under Admin › Connections. Ask your Looker admin if unsure.</span>
+                </div>
+                <div class="field">
+                  <label for="ncProj">Looker project (optional)</label>
+                  <input id="ncProj" placeholder="e.g. acme_sales">
+                  <span class="hint">Needed later to send files straight to Looker</span>
+                </div>
+                <div class="field">
+                  <label for="ncLayout">Folder layout</label>
+                  <select id="ncLayout"><option>views/ models/ dashboards/ (standard)</option><option>All files in one folder</option></select>
+                  <span class="hint">Match how files are arranged in your Looker project</span>
+                </div>
+                <div class="field">
+                  <label for="ncId">API client ID</label>
+                  <input id="ncId" autocomplete="off">
+                  <span class="hint">From your Looker user's API keys</span>
+                </div>
+                <div class="field">
+                  <label for="ncSecret">API client secret</label>
+                  <input id="ncSecret" type="password" autocomplete="new-password">
+                  <span class="hint">Stored encrypted. Never shown again.</span>
+                </div>
+              </div>
+              <label class="check" for="ncDefault"><input type="checkbox" id="ncDefault"> Make this my default connection</label>
+              <div class="form-actions">
+                <button class="btn sm" type="button" id="ncTest">Test connection</button>
+                <button class="btn sm primary" type="button">Save and use</button>
+                <span class="test-ok" id="ncTestMsg" hidden>✓ Connected. Found BigQuery connection “bq_acme_analytics”.</span>
+              </div>
+            </div>
+            <div class="note"><b>N4</b>The connection's BigQuery connection name is written to the model file. API credentials are optional for v1 (file download only) and needed for "Send to Looker" and checking that the files work.</div>
+
+            <details class="adv">
+              <summary>Advanced settings (for Looker developers)</summary>
+              <div class="fields">
+                <div class="field">
+                  <label for="model">Model name</label>
+                  <input id="model" value="sales">
+                  <span class="hint">Creates <span class="mono">sales.model.lkml</span>. Use an existing model's name to add to that model instead. Defaults to the dataset name.</span>
+                </div>
+                <div class="field">
+                  <span class="label">Folder layout</span>
+                  <span class="small">views/ · models/ · dashboards/</span>
+                  <span class="hint">Set by the Looker connection above. <a href="#preferences">Change it in Settings</a>.</span>
+                </div>
+              </div>
+            </details>
+            <div class="note"><b>N5</b>Folder layout is a property of the Looker project, so it now lives on the connection. It decides both the folders in the .zip and the include: paths in the model file.</div>
+          </div>
+
+          <div class="setup-foot">
+            <span class="status"><span class="dot"></span> You have access to this data</span>
+            <div style="display:flex;gap:8px">
+              <a class="btn" href="#home">Cancel</a>
+              <a class="btn primary" href="#session">Start session</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3. SESSION CHAT ============ -->
+    <section class="session-view" data-view="session" hidden>
+      <div class="ctxbar">
+        <strong>Monthly sales by region</strong>
+        <span class="src" title="acme-analytics.sales · orders, order_items, customers"><svg width="14" height="14"><use href="#i-db"/></svg> Using: Sales data · Orders, Order items, Customers</span>
+        <span class="spacer"></span>
+        <button class="btn sm primary"><svg><use href="#i-dl"/></svg> Download .zip</button>
+      </div>
+      <div class="note" style="margin:10px 22px 0"><b>S1</b>Always shows which data this session uses, in friendly names. Hover shows the exact BigQuery IDs. Only this data is ever sent to Cortex.</div>
+
+      <div class="split">
+        <div class="chat">
+          <div class="thread" aria-live="polite">
+            <div class="msg">
+              <span class="who">Assistant</span>
+              <div class="bubble">
+                I've read your 3 tables. I can see order amounts, order dates and customer regions, so I can build things like revenue trends and regional breakdowns. What would you like to see?
+              </div>
+            </div>
+
+            <div class="msg user">
+              <span class="who">You · 09:43</span>
+              <div class="bubble">Show me revenue, number of orders and average order value by region and month, as a dashboard.</div>
+            </div>
+
+            <div class="msg">
+              <span class="who">Assistant</span>
+              <div class="bubble">
+                Here's what I'll build. Does this look right?
+                <div class="plan">
+                  <div><h3>Metrics</h3>
+                    <ul>
+                      <li>Total revenue <span>(sum of order amounts)</span></li>
+                      <li>Number of orders</li>
+                      <li>Average order value <span>(revenue ÷ orders)</span></li>
+                    </ul></div>
+                  <div><h3>Broken down by</h3><ul><li>Customer region</li><li>Order month</li></ul></div>
+                  <div><h3>Dashboard</h3><ul><li>3 headline numbers, a monthly revenue trend, and revenue by region</li></ul></div>
+                </div>
+                <div class="actions">
+                  <button class="btn sm primary">Yes, build it</button>
+                  <button class="btn sm">Change something</button>
+                </div>
+              </div>
+              <div class="note"><b>S2</b>Cortex turns the request into a plan written in business terms. Nothing is generated until the user confirms. Technical users can still see the joins and SQL in the Code tab.</div>
+            </div>
+
+            <div class="msg user">
+              <span class="who">You · 09:44</span>
+              <div class="bubble">Yes, but leave out cancelled orders.</div>
+            </div>
+
+            <div class="msg">
+              <span class="who">Assistant</span>
+              <div class="bubble">
+                Done. Cancelled orders are excluded everywhere. Your dashboard is ready in the preview on the right, and you can download everything as one .zip.
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="thinking"><i></i><i></i><i></i> Example of a working state: "Checking your tables…"</div>
+            </div>
+          </div>
+
+          <div class="composer">
+            <div class="suggest">
+              <button>Compare with last year</button>
+              <button>Add a filter for product category</button>
+              <button>What does each metric mean?</button>
+            </div>
+            <div class="input">
+              <textarea id="chatIn" rows="2" placeholder="Ask for a change in your own words…" aria-label="Message"></textarea>
+              <button class="btn primary">Send</button>
+            </div>
+            <div class="note"><b>S3</b>One text box plus suggestions based on the data and what's been built so far.</div>
+          </div>
+        </div>
+
+        <div class="result">
+          <div class="result-head">
+            <div class="seg" role="group" aria-label="Result view">
+              <button aria-pressed="true" data-mode="preview">Preview</button>
+              <button aria-pressed="false" data-mode="code">Code</button>
+            </div>
+            <span class="checks"><span class="pill ok">✓ All checks passed</span><span class="pill warn">1 tip</span></span>
+          </div>
+
+          <div class="preview" id="previewPane">
+            <div class="dash">
+              <div class="dash-title"><h3>Monthly Sales by Region</h3><span class="sample">Layout preview · sample numbers</span></div>
+              <div class="kpis">
+                <div class="kpi"><span>Total revenue</span><strong>$4.82M</strong></div>
+                <div class="kpi"><span>Orders</span><strong>61,240</strong></div>
+                <div class="kpi"><span>Avg order value</span><strong>$78.70</strong></div>
+              </div>
+              <div class="charts">
+                <div class="chart"><span>Revenue by month</span>
+                  <svg viewBox="0 0 240 96" preserveAspectRatio="none" aria-hidden="true">
+                    <path d="M0 80 L240 80" stroke="var(--line)" stroke-width="1" fill="none"/>
+                    <path d="M0 70 L22 64 L44 66 L66 54 L88 58 L110 46 L132 50 L154 38 L176 40 L198 28 L220 30 L240 20 L240 80 L0 80 Z" fill="var(--accent-soft)"/>
+                    <path d="M0 70 L22 64 L44 66 L66 54 L88 58 L110 46 L132 50 L154 38 L176 40 L198 28 L220 30 L240 20" fill="none" stroke="var(--viz-1)" stroke-width="2"/>
+                    <circle cx="238" cy="20" r="3" fill="var(--viz-1)"/>
+                  </svg>
+                </div>
+                <div class="chart"><span>Revenue by region</span>
+                  <svg viewBox="0 0 120 96" preserveAspectRatio="none" aria-hidden="true">
+                    <rect x="0" y="8" width="112" height="14" rx="2" fill="var(--viz-1)"/>
+                    <rect x="0" y="30" width="86" height="14" rx="2" fill="var(--viz-1)"/>
+                    <rect x="0" y="52" width="60" height="14" rx="2" fill="var(--viz-2)"/>
+                    <rect x="0" y="74" width="38" height="14" rx="2" fill="var(--viz-2)"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="note"><b>S4</b>Preview is the default view: a sketch of the dashboard layout so non-technical users can check it before it goes into Looker. Real numbers only appear once it's deployed in Looker.</div>
+
+            <div class="panel">
+              <div class="panel-head"><h3>Metrics in this package</h3><span class="muted small">3 metrics · 2 breakdowns</span></div>
+              <div class="metrics">
+                <div class="metric"><strong>Total revenue</strong><span class="pill accent">Currency</span><p>Sum of order amounts, excluding cancelled orders.</p></div>
+                <div class="metric"><strong>Number of orders</strong><span class="pill accent">Count</span><p>Count of orders, excluding cancelled orders.</p></div>
+                <div class="metric"><strong>Average order value</strong><span class="pill accent">Currency</span><p>Total revenue divided by number of orders.</p></div>
+              </div>
+            </div>
+
+            <div class="panel" style="padding:12px 14px">
+              <p class="small"><span class="pill warn">Tip</span> The <b>amount</b> column has no description in BigQuery. Adding one helps your team understand the revenue metric.</p>
+            </div>
+          </div>
+
+          <div class="codeview" id="codePane" hidden>
+            <div class="tabs" role="tablist" aria-label="Generated files">
+              <button role="tab" aria-selected="true" data-file="orders">orders.view.lkml</button>
+              <button role="tab" aria-selected="false" data-file="customers">customers.view.lkml</button>
+              <button role="tab" aria-selected="false" data-file="model">sales.model.lkml</button>
+              <button role="tab" aria-selected="false" data-file="dash">monthly_sales.dashboard.lookml</button>
+            </div>
+            <div class="file-tools">
+              <span class="muted" id="fileMeta">views/orders.view.lkml · version 2</span>
+              <span style="display:flex;gap:6px">
+                <button class="btn sm" id="copyBtn">Copy</button>
+                <button class="btn sm">Compare versions</button>
+                <button class="btn sm">Edit</button>
+              </span>
+            </div>
+
+<pre class="code" data-code="orders"><span class="k">view</span>: orders {
+  <span class="k">sql_table_name</span>: <span class="s">`acme-analytics.sales.orders`</span> ;;
+
+  <span class="k">dimension</span>: order_id {
+    <span class="k">primary_key</span>: yes
+    <span class="k">type</span>: string
+    <span class="k">sql</span>: ${TABLE}.order_id ;;
+  }
+
+  <span class="k">dimension</span>: customer_id {
+    <span class="k">type</span>: string
+    <span class="k">hidden</span>: yes
+    <span class="k">sql</span>: ${TABLE}.customer_id ;;
+  }
+
+  <span class="k">dimension</span>: status {
+    <span class="k">type</span>: string
+    <span class="k">sql</span>: ${TABLE}.status ;;
+  }
+
+  <span class="k">dimension_group</span>: created {
+    <span class="k">type</span>: time
+    <span class="k">timeframes</span>: [date, week, month, quarter, year]
+    <span class="k">sql</span>: ${TABLE}.created_at ;;
+  }
+
+  <span class="k">measure</span>: total_revenue {
+    <span class="k">label</span>: <span class="s">"Total revenue"</span>
+    <span class="k">type</span>: sum
+    <span class="k">sql</span>: ${TABLE}.amount ;;
+    <span class="k">value_format_name</span>: usd
+  }
+
+  <span class="k">measure</span>: order_count {
+    <span class="k">label</span>: <span class="s">"Number of orders"</span>
+    <span class="k">type</span>: count
+  }
+
+  <span class="k">measure</span>: avg_order_value {
+    <span class="k">label</span>: <span class="s">"Average order value"</span>
+    <span class="k">type</span>: number
+    <span class="k">sql</span>: ${total_revenue} / NULLIF(${order_count}, 0) ;;
+    <span class="k">value_format_name</span>: usd
+  }
+}</pre>
+
+<pre class="code" data-code="customers" hidden><span class="k">view</span>: customers {
+  <span class="k">sql_table_name</span>: <span class="s">`acme-analytics.sales.customers`</span> ;;
+
+  <span class="k">dimension</span>: customer_id {
+    <span class="k">primary_key</span>: yes
+    <span class="k">type</span>: string
+    <span class="k">sql</span>: ${TABLE}.customer_id ;;
+  }
+
+  <span class="k">dimension</span>: region {
+    <span class="k">label</span>: <span class="s">"Customer region"</span>
+    <span class="k">type</span>: string
+    <span class="k">sql</span>: ${TABLE}.region ;;
+  }
+}</pre>
+
+<pre class="code" data-code="model" hidden><span class="k">connection</span>: <span class="s">"bq_acme_analytics"</span>
+
+<span class="k">include</span>: <span class="s">"/views/*.view.lkml"</span>
+<span class="k">include</span>: <span class="s">"/dashboards/*.dashboard.lookml"</span>
+
+<span class="k">explore</span>: orders {
+  <span class="k">label</span>: <span class="s">"Sales"</span>
+  <span class="k">sql_always_where</span>: ${orders.status} != <span class="s">'cancelled'</span> ;;
+
+  <span class="k">join</span>: customers {
+    <span class="k">type</span>: left_outer
+    <span class="k">relationship</span>: many_to_one
+    <span class="k">sql_on</span>: ${orders.customer_id} = ${customers.customer_id} ;;
+  }
+}</pre>
+
+<pre class="code" data-code="dash" hidden>- <span class="k">dashboard</span>: monthly_sales
+  <span class="k">title</span>: <span class="s">Monthly Sales by Region</span>
+  <span class="k">layout</span>: newspaper
+  <span class="k">elements</span>:
+  - <span class="k">title</span>: <span class="s">Total revenue</span>
+    <span class="k">name</span>: total_revenue
+    <span class="k">model</span>: sales
+    <span class="k">explore</span>: orders
+    <span class="k">type</span>: single_value
+    <span class="k">fields</span>: [orders.total_revenue]
+  - <span class="k">title</span>: <span class="s">Revenue by month</span>
+    <span class="k">name</span>: revenue_trend
+    <span class="k">model</span>: sales
+    <span class="k">explore</span>: orders
+    <span class="k">type</span>: looker_line
+    <span class="k">fields</span>: [orders.created_month, orders.total_revenue]
+    <span class="k">sorts</span>: [orders.created_month]
+  - <span class="k">title</span>: <span class="s">Revenue by region</span>
+    <span class="k">name</span>: revenue_by_region
+    <span class="k">model</span>: sales
+    <span class="k">explore</span>: orders
+    <span class="k">type</span>: looker_bar
+    <span class="k">fields</span>: [customers.region, orders.total_revenue]
+    <span class="k">sorts</span>: [orders.total_revenue desc]</pre>
+            <div class="note" style="margin:10px 14px"><b>S5</b>Code view is for Looker developers: the real files, version history, compare and inline edit.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4. MY FILES ============ -->
+    <section class="screen" data-view="library" hidden>
+      <div>
+        <h1>My files</h1>
+        <p class="muted">Everything you've built, packaged by session. Each download is ready to add to your Looker project.</p>
+      </div>
+      <div class="filters">
+        <input id="libSearch" placeholder="Search sessions…" aria-label="Search sessions">
+        <select id="libSrc" aria-label="Data source"><option>All data sources</option><option>Sales data</option><option>CRM data</option><option>Warehouse data</option></select>
+        <select id="libSort" aria-label="Sort"><option>Newest first</option><option>Oldest first</option><option>Name A–Z</option></select>
+      </div>
+
+      <div class="lib">
+        <article class="lib-card">
+          <div class="lib-top">
+            <span class="zip"><svg><use href="#i-zip"/></svg></span>
+            <div>
+              <h2>Monthly sales by region</h2>
+              <p class="sub">Sales data · updated today at 09:44</p>
+              <div class="lib-tags"><span class="pill">1 dashboard</span><span class="pill">3 metrics</span><span class="pill ok">Ready</span></div>
+            </div>
+            <div class="lib-btns"><a class="btn sm" href="#session">Open session</a><button class="btn sm primary"><svg><use href="#i-dl"/></svg> Download .zip</button></div>
+          </div>
+          <details>
+            <summary>Show the 4 files inside</summary>
+            <ul class="fl">
+              <li><span class="mono">views/orders.view.lkml</span><span>version 2</span></li>
+              <li><span class="mono">views/customers.view.lkml</span><span>version 1</span></li>
+              <li><span class="mono">models/sales.model.lkml</span><span>version 2</span></li>
+              <li><span class="mono">dashboards/monthly_sales.dashboard.lookml</span><span>version 1</span></li>
+            </ul>
+          </details>
+        </article>
+
+        <article class="lib-card">
+          <div class="lib-top">
+            <span class="zip"><svg><use href="#i-zip"/></svg></span>
+            <div>
+              <h2>Customer churn</h2>
+              <p class="sub">CRM data · updated yesterday</p>
+              <div class="lib-tags"><span class="pill">1 dashboard</span><span class="pill">2 metrics</span><span class="pill ok">Ready</span></div>
+            </div>
+            <div class="lib-btns"><a class="btn sm" href="#session">Open session</a><button class="btn sm primary"><svg><use href="#i-dl"/></svg> Download .zip</button></div>
+          </div>
+          <details>
+            <summary>Show the 3 files inside</summary>
+            <ul class="fl">
+              <li><span class="mono">views/customers.view.lkml</span><span>version 3</span></li>
+              <li><span class="mono">models/crm.model.lkml</span><span>version 1</span></li>
+              <li><span class="mono">dashboards/churn.dashboard.lookml</span><span>version 1</span></li>
+            </ul>
+          </details>
+        </article>
+
+        <article class="lib-card">
+          <div class="lib-top">
+            <span class="zip"><svg><use href="#i-zip"/></svg></span>
+            <div>
+              <h2>Warehouse stock levels</h2>
+              <p class="sub">Warehouse data · updated 18 Nov</p>
+              <div class="lib-tags"><span class="pill">No dashboard yet</span><span class="pill">5 metrics</span><span class="pill warn">Needs a look</span></div>
+            </div>
+            <div class="lib-btns"><a class="btn sm" href="#session">Open session</a><button class="btn sm primary"><svg><use href="#i-dl"/></svg> Download .zip</button></div>
+          </div>
+          <details>
+            <summary>Show the 4 files inside</summary>
+            <ul class="fl">
+              <li><span class="mono">views/stock_levels.view.lkml</span><span>version 1</span></li>
+              <li><span class="mono">views/warehouses.view.lkml</span><span>version 1</span></li>
+              <li><span class="mono">views/products.view.lkml</span><span>version 1</span></li>
+              <li><span class="mono">models/warehouse.model.lkml</span><span>version 1</span></li>
+            </ul>
+          </details>
+        </article>
+      </div>
+      <div class="note"><b>L1</b>Packaged by session, like Home. File names stay hidden until someone expands a card. Later: a "Send to Looker project" button that opens a Git pull request.</div>
+    </section>
+
+    <!-- ============ 5. SETTINGS ============ -->
+    <section class="screen" data-view="preferences" hidden>
+      <div>
+        <h1>Settings</h1>
+        <p class="muted">Connections and preferences used across all your sessions.</p>
+      </div>
+      <div class="prefs">
+        <nav class="subnav" aria-label="Settings sections">
+          <button type="button" data-pref="p-looker" aria-current="true">Looker connections</button>
+          <button type="button" data-pref="p-cortex">AI assistant (Cortex)</button>
+          <button type="button" data-pref="p-look">Appearance</button>
+          <button type="button" data-pref="p-defaults">Defaults</button>
+        </nav>
+
+        <!-- Looker connections -->
+        <div class="pref-panel" id="p-looker">
+          <div class="screen-head">
+            <div><h2>Looker connections</h2><p class="muted small">Saved connections appear in the setup of every new session.</p></div>
+            <button class="btn primary sm" type="button" id="addConnBtn">+ Add connection</button>
+          </div>
+
+          <div class="conn-form" id="addConnForm" hidden>
+            <h3>Add a Looker connection</h3>
+            <div class="fields">
+              <div class="field"><label for="acName">Name</label><input id="acName" placeholder="e.g. Finance Looker"></div>
+              <div class="field"><label for="acUrl">Looker address</label><input id="acUrl" placeholder="https://yourcompany.cloud.looker.com"></div>
+              <div class="field"><label for="acBq">BigQuery connection in Looker</label><input id="acBq" placeholder="e.g. bq_finance"><span class="hint">Admin › Connections in Looker</span></div>
+              <div class="field"><label for="acProj">Looker project (optional)</label><input id="acProj"></div>
+              <div class="field" style="grid-column:1 / -1">
+                <label for="acLayout">Folder layout</label>
+                <select id="acLayout"><option>views/ models/ dashboards/ (standard)</option><option>All files in one folder</option></select>
+                <span class="hint">Used for the .zip folders and the include: paths in the model file. Match how files are arranged in your Looker project.</span>
+              </div>
+              <div class="field"><label for="acId">API client ID</label><input id="acId" autocomplete="off"></div>
+              <div class="field"><label for="acSecret">API client secret</label><input id="acSecret" type="password" autocomplete="new-password"><span class="hint">Stored encrypted</span></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn sm" type="button">Test connection</button>
+              <button class="btn sm primary" type="button">Save connection</button>
+              <button class="btn sm ghost" type="button" id="addConnCancel">Cancel</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="conn-row">
+              <div><strong>Acme Looker (Production)</strong> <span class="pill accent">Default</span>
+                <small>acme.cloud.looker.com · BigQuery connection “bq_acme_analytics” · project acme_sales · standard folders</small></div>
+              <span class="pill ok">Connected · tested today</span>
+              <div class="row-btns"><button class="btn sm ghost" type="button">Test</button><button class="btn sm ghost" type="button">Edit</button></div>
+            </div>
+            <div class="conn-row">
+              <div><strong>Acme Looker (Development)</strong>
+                <small>acme-dev.cloud.looker.com · BigQuery connection “bq_acme_dev” · all files in one folder</small></div>
+              <span class="pill">Not tested</span>
+              <div class="row-btns"><button class="btn sm ghost" type="button">Test</button><button class="btn sm ghost" type="button">Edit</button><button class="btn sm ghost" type="button">Remove</button></div>
+            </div>
+            <div class="conn-row">
+              <div><strong>Finance Looker</strong> <span class="pill">Shared by admin</span>
+                <small>acme-fin.cloud.looker.com · BigQuery connection “bq_finance” · standard folders</small></div>
+              <span class="pill warn">Key expires in 6 days</span>
+              <div class="row-btns"><button class="btn sm ghost" type="button">Test</button><button class="btn sm ghost" type="button">View</button></div>
+            </div>
+          </div>
+          <div class="note"><b>P1</b>Two kinds of connection: personal ones (the user's own) and shared ones that an admin sets up for everyone, which users can view but not edit. Secrets are encrypted in the backend and never sent back to the browser.</div>
+        </div>
+
+        <!-- Cortex -->
+        <div class="pref-panel" id="p-cortex" hidden>
+          <div class="screen-head">
+            <div><h2>AI assistant (Cortex)</h2><p class="muted small">The assistant uses Cortex, our company's AI service, to understand your requests.</p></div>
+            <span class="pill ok">Connected · 420 ms</span>
+          </div>
+          <div class="panel">
+            <div class="form-sec">
+              <div class="fields">
+                <div class="field" style="grid-column:1 / -1">
+                  <label for="cxUrl">Cortex endpoint address</label>
+                  <input id="cxUrl" value="https://cortex.internal.acme.com/v1/chat">
+                  <span class="hint">The proxy address from your platform team</span>
+                </div>
+                <div class="field">
+                  <label for="cxAuth">Sign-in method</label>
+                  <select id="cxAuth"><option>API key</option><option>Company sign-in (SSO token)</option><option>Service account</option></select>
+                </div>
+                <div class="field">
+                  <label for="cxKey">API key</label>
+                  <input id="cxKey" type="password" value="••••••••••••" autocomplete="off">
+                  <span class="hint">Stored encrypted</span>
+                </div>
+                <div class="field">
+                  <label for="cxModel">AI model</label>
+                  <select id="cxModel"><option>Default (recommended)</option><option>Fast</option><option>Most capable</option></select>
+                  <span class="hint">The options depend on what Cortex offers</span>
+                </div>
+                <div class="field">
+                  <label for="cxTimeout">Time limit per request</label>
+                  <select id="cxTimeout"><option>30 seconds</option><option selected>60 seconds</option><option>120 seconds</option></select>
+                </div>
+              </div>
+              <details class="adv">
+                <summary>Advanced (extra headers, proxy, retries)</summary>
+                <div class="fields">
+                  <div class="field"><label for="cxHeaders">Extra request headers</label><input id="cxHeaders" placeholder="X-Team-Id: analytics"></div>
+                  <div class="field"><label for="cxRetries">Retries on failure</label><select id="cxRetries"><option>0</option><option selected>2</option><option>3</option></select></div>
+                  <div class="field"><label for="cxProxy">HTTPS proxy (optional)</label><input id="cxProxy" placeholder="http://proxy.acme.com:8080"></div>
+                  <div class="field"><label for="cxCa">Custom CA certificate (optional)</label><input id="cxCa" placeholder="/etc/ssl/acme-root.pem"></div>
+                </div>
+              </details>
+            </div>
+            <div class="setup-foot">
+              <span class="muted">Last checked today at 09:30</span>
+              <div class="form-actions"><button class="btn sm" type="button">Test connection</button><button class="btn sm primary" type="button">Save</button></div>
+            </div>
+          </div>
+          <div class="note"><b>P2</b>Probably admin-only in production: regular users see the status pill and a read-only endpoint. Field names line up with the Cortex client config once you share that code.</div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="pref-panel" id="p-look" hidden>
+          <div><h2>Appearance</h2><p class="muted small">How Looker Helper looks and how much technical detail it shows.</p></div>
+          <fieldset class="theme-cards" style="border:0;padding:0;margin:0">
+            <legend class="label" style="margin-bottom:8px">Theme</legend>
+            <label class="theme-card" for="thLight"><span class="swatch sw-light"><i></i><i></i></span><span class="lbl"><input type="radio" name="theme" id="thLight" value="light"> Light</span></label>
+            <label class="theme-card" for="thDark"><span class="swatch sw-dark"><i></i><i></i></span><span class="lbl"><input type="radio" name="theme" id="thDark" value="dark"> Dark</span></label>
+            <label class="theme-card" for="thSys"><span class="swatch sw-sys"><i></i><i></i></span><span class="lbl"><input type="radio" name="theme" id="thSys" value="system"> Match my computer</span></label>
+          </fieldset>
+          <div class="panel">
+            <div class="toggle-row">
+              <label for="prefCode"><strong>Open the Code view by default</strong></label>
+              <input type="checkbox" id="prefCode">
+              <p>For Looker developers. Sessions open on the generated files instead of the preview.</p>
+            </div>
+            <div class="toggle-row">
+              <label for="prefPlan"><strong>Ask me to confirm the plan before building</strong></label>
+              <input type="checkbox" id="prefPlan" checked>
+              <p>Recommended. The assistant shows what it will build and waits for your OK.</p>
+            </div>
+          </div>
+          <div class="note"><b>P3</b>Theme applies right away and is remembered per user. The rail's theme button is a shortcut to the same setting.</div>
+        </div>
+
+        <!-- Defaults -->
+        <div class="pref-panel" id="p-defaults" hidden>
+          <div><h2>Defaults for new sessions</h2><p class="muted small">Pre-filled when you start a session. You can still change them each time.</p></div>
+          <div class="panel">
+            <div class="form-sec">
+              <div class="fields">
+                <div class="field"><label for="dfProj">Google Cloud project</label><select id="dfProj"><option>Acme Analytics (acme-analytics)</option><option>Acme Operations (acme-ops)</option></select></div>
+                <div class="field"><label for="dfDs">Dataset</label><select id="dfDs"><option>Sales data (sales)</option><option>None, ask me each time</option></select></div>
+                <div class="field"><label for="dfConn">Looker connection</label><select id="dfConn"><option>Acme Looker (Production)</option><option>Acme Looker (Development)</option></select></div>
+                <div class="field"><label for="dfKeep">Keep sessions for</label><select id="dfKeep"><option>90 days</option><option>1 year</option><option>Forever</option></select></div>
+              </div>
+            </div>
+            <div class="setup-foot"><span class="muted">Applies to new sessions only</span><button class="btn sm primary" type="button">Save</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var views = ["home", "new-session", "session", "library", "preferences"];
+
+  // Theme: "light" | "dark" | "system"
+  var root = document.documentElement;
+  var themeBtn = document.getElementById("themeBtn");
+  var mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function isDark(pref) { return pref === "dark" || (pref === "system" && mq && mq.matches); }
+  function applyTheme(pref) {
+    if (pref === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", pref);
+    document.querySelectorAll('input[name="theme"]').forEach(function (r) { r.checked = r.value === pref; });
+    var dark = isDark(pref);
+    themeBtn.querySelector("use").setAttribute("href", dark ? "#i-sun" : "#i-moon");
+    themeBtn.querySelector("span").textContent = dark ? "Light theme" : "Dark theme";
+    try { localStorage.setItem("lh-theme", pref); } catch (e) {}
+  }
+  var saved = null;
+  try { saved = localStorage.getItem("lh-theme"); } catch (e) {}
+  applyTheme(saved || "system");
+  themeBtn.addEventListener("click", function () {
+    var cur = root.getAttribute("data-theme") || (mq && mq.matches ? "dark" : "light");
+    applyTheme(cur === "dark" ? "light" : "dark");
+  });
+  document.querySelectorAll('input[name="theme"]').forEach(function (r) {
+    r.addEventListener("change", function () { applyTheme(r.value); });
+  });
+
+  // Settings sub-navigation
+  document.querySelectorAll("[data-pref]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("[data-pref]").forEach(function (x) {
+        x.setAttribute("aria-current", x === b ? "true" : "false");
+        document.getElementById(x.dataset.pref).hidden = x !== b;
+      });
+    });
+  });
+  var addForm = document.getElementById("addConnForm");
+  document.getElementById("addConnBtn").addEventListener("click", function () { addForm.hidden = false; document.getElementById("acName").focus(); });
+  document.getElementById("addConnCancel").addEventListener("click", function () { addForm.hidden = true; });
+
+  // Setup: new Looker connection inline form
+  var connNew = document.getElementById("connNew");
+  document.querySelectorAll('input[name="connPick"]').forEach(function (r) {
+    r.addEventListener("change", function () { connNew.hidden = !document.getElementById("connNewRadio").checked; });
+  });
+  document.getElementById("ncTest").addEventListener("click", function () { document.getElementById("ncTestMsg").hidden = false; });
+  function show() {
+    var r = (location.hash || "#home").slice(1);
+    if (views.indexOf(r) < 0) r = "home";
+    document.querySelectorAll("[data-view]").forEach(function (v) { v.hidden = v.dataset.view !== r; });
+    document.querySelectorAll("[data-route]").forEach(function (a) {
+      if (a.dataset.route === r) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+    document.querySelectorAll("[data-nav]").forEach(function (a) { a.classList.toggle("on", a.dataset.nav === r); });
+    document.querySelector(".main").scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener("hashchange", show);
+  show();
+
+  var toggle = document.getElementById("notesToggle");
+  function notes() { document.body.classList.toggle("notes-on", toggle.checked); }
+  toggle.addEventListener("change", notes);
+  notes();
+
+  var ask = document.getElementById("homeAsk");
+  document.querySelectorAll("[data-ex]").forEach(function (b) {
+    b.addEventListener("click", function () { ask.value = b.dataset.ex; ask.focus(); });
+  });
+
+  document.querySelectorAll("[data-mode]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var code = b.dataset.mode === "code";
+      document.querySelectorAll("[data-mode]").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      document.getElementById("previewPane").hidden = code;
+      document.getElementById("codePane").hidden = !code;
+    });
+  });
+
+  var meta = {
+    orders: "views/orders.view.lkml · version 2",
+    customers: "views/customers.view.lkml · version 1",
+    model: "models/sales.model.lkml · version 2",
+    dash: "dashboards/monthly_sales.dashboard.lookml · version 1"
+  };
+  var current = "orders";
+  document.querySelectorAll(".tabs [data-file]").forEach(function (t) {
+    t.addEventListener("click", function () {
+      current = t.dataset.file;
+      document.querySelectorAll(".tabs [data-file]").forEach(function (x) { x.setAttribute("aria-selected", x === t ? "true" : "false"); });
+      document.querySelectorAll("[data-code]").forEach(function (p) { p.hidden = p.dataset.code !== current; });
+      document.getElementById("fileMeta").textContent = meta[current];
+    });
+  });
+
+  var copyBtn = document.getElementById("copyBtn");
+  copyBtn.addEventListener("click", function () {
+    var text = document.querySelector('[data-code="' + current + '"]').textContent;
+    function done(msg) { copyBtn.textContent = msg; setTimeout(function () { copyBtn.textContent = "Copy"; }, 1400); }
+    try {
+      navigator.clipboard.writeText(text).then(function () { done("Copied"); }, function () { done("Select and copy"); });
+    } catch (e) { done("Select and copy"); }
+  });
+
+  var list = document.getElementById("tblList");
+  list.addEventListener("change", function () { document.getElementById("selCount").textContent = list.querySelectorAll("input:checked").length; });
+  document.getElementById("tblSearch").addEventListener("input", function (e) {
+    var q = e.target.value.toLowerCase();
+    list.querySelectorAll(".trow").forEach(function (row) { row.hidden = row.textContent.toLowerCase().indexOf(q) < 0; });
+  });
+})();
+</script>
