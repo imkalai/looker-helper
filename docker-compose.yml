@@ -15,6 +15,9 @@ services:
     env_file:
       - path: .env
         required: false
+    environment:
+      # Local use only: who you are when there's no sign-in proxy in front. Never set this in a real deployment.
+      LH_DEV_USER_EMAIL: ${LH_DEV_USER_EMAIL:-dev.user@example.com}
     volumes:
       - lh-data:/data
     restart: unless-stopped
@@ -32,6 +35,7 @@ services:
       - path: .env
         required: false
     environment:
+      LH_DEV_USER_EMAIL: ${LH_DEV_USER_EMAIL:-dev.user@example.com}
       LH_RELOAD: "1"
       WATCHFILES_FORCE_POLLING: "true"  # file events don't cross Windows bind mounts
     volumes:

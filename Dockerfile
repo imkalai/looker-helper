@@ -12,6 +12,8 @@ FROM ${BASE_IMAGE} AS runtime
 
 ARG PIP_INDEX_URL
 ARG PIP_TRUSTED_HOST
+# Pinned versions; build with --build-arg PIP_CONSTRAINTS=/dev/null to resolve fresh ones (see README)
+ARG PIP_CONSTRAINTS=constraints.txt
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -35,8 +37,8 @@ RUN groupadd --system --gid 10001 app \
  && useradd --system --uid 10001 --gid app --home-dir /app --shell /usr/sbin/nologin app
 
 WORKDIR /app
-COPY requirements.txt .
-RUN python -m venv /opt/venv && pip install -r requirements.txt
+COPY requirements.txt constraints.txt ./
+RUN python -m venv /opt/venv && pip install -r requirements.txt -c ${PIP_CONSTRAINTS}
 
 COPY alembic.ini ./
 COPY migrations ./migrations
@@ -58,8 +60,9 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 
 
 FROM runtime AS test
+ARG PIP_CONSTRAINTS=constraints.txt
 COPY requirements-dev.txt .
-RUN pip install -r requirements-dev.txt
+RUN pip install -r requirements-dev.txt -c ${PIP_CONSTRAINTS}
 COPY tests ./tests
 # Lets the database tests wipe and rebuild the schema. Only ever set in this throwaway test image.
 ENV LH_TEST_ALLOW_RESET=1

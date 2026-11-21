@@ -35,6 +35,15 @@ def _ask(cortex: CortexClient, task: str, context: dict, user_text: str, errors:
     return _json(reply)
 
 
+_UNSAFE_VALUE = re.compile(r";;|\$\{|\{\{|\{%|[\r\n\x00]")
+
+
+def safe_filter_value(value: str) -> bool:
+    """Filter values end up inside generated SQL/LookML. Block anything that could end a LookML
+    block (;;), start a field reference or Liquid tag, or span lines."""
+    return 0 < len(value) <= 100 and not _UNSAFE_VALUE.search(value)
+
+
 def validate_plan(plan: Plan, tables: list[TableMeta]) -> tuple[Plan, list[str]]:
     """Return a cleaned-up plan and the problems that need Cortex to try again."""
     errors: list[str] = []
@@ -108,6 +117,9 @@ def validate_plan(plan: Plan, tables: list[TableMeta]) -> tuple[Plan, list[str]]
             f.column = col.name
         if not f.values:
             errors.append(f"filter on '{f.table}.{f.column}' has no values")
+        for v in f.values:
+            if not safe_filter_value(v):
+                errors.append(f"filter value {v[:40]!r} isn't allowed: use plain words or numbers (no ';;', braces or line breaks)")
 
     names = {m.name for m in plan.metrics}
     tiles: list[Tile] = []

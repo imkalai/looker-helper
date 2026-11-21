@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Looker Helper</title>
   <link rel="stylesheet" href="/static/css/app.css">
-  <script>
-    // Apply the saved theme before first paint to avoid a flash
-    try { var t = localStorage.getItem("lh-theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-  </script>
+  <script src="/static/js/theme-init.js"></script>
 </head>
 <body>
   <div class="app" id="app">

@@ -31,9 +31,16 @@ class Settings(BaseSettings):
 
     cortex_mode: Literal["mock", "real"] = "mock"
 
+    # Sign-in. With IAP, set iap_audience: the signed IAP header is verified on every request (recommended).
+    # Otherwise auth_header is trusted as-is, so only the sign-in proxy must be able to reach the app.
+    iap_audience: str = ""  # "/projects/PROJECT_NUMBER/global/backendServices/SERVICE_ID" or "/projects/PROJECT_NUMBER/apps/PROJECT_ID"
     auth_header: str = "X-Goog-Authenticated-User-Email"
-    dev_user_email: str | None = "dev.user@example.com"
+    dev_user_email: str | None = None  # local development only: who you are when no sign-in header is present
     admin_emails: str = ""
+
+    bq_allowed_projects: str = ""  # comma-separated; empty = every project the app's credentials can read
+    looker_allowed_hosts: str = ""  # comma-separated host patterns, e.g. "*.cloud.looker.com"; empty = any public host
+    enable_api_docs: bool = False
 
     secret_key: str | None = None
 
@@ -48,6 +55,14 @@ class Settings(BaseSettings):
     @property
     def admin_list(self) -> set[str]:
         return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}
+
+    @property
+    def allowed_projects(self) -> set[str]:
+        return {p.strip() for p in self.bq_allowed_projects.split(",") if p.strip()}
+
+    @property
+    def allowed_looker_hosts(self) -> list[str]:
+        return [h.strip().lower() for h in self.looker_allowed_hosts.split(",") if h.strip()]
 
     @property
     def large_table_bytes(self) -> int:

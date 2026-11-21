@@ -12,7 +12,8 @@ export async function api(path, opts = {}) {
   try {
     res = await fetch(path, {
       method: opts.method || (opts.body ? "POST" : "GET"),
-      headers: opts.body ? { "Content-Type": "application/json" } : {},
+      // X-Requested-With proves the request came from this app (the server rejects data changes without it)
+      headers: { "X-Requested-With": "looker-helper", ...(opts.body ? { "Content-Type": "application/json" } : {}) },
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     });
   } catch {

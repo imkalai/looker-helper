@@ -12,7 +12,7 @@ from app.auth import CurrentUser, get_current_user
 from app.db import get_db
 from app.models import LookerConnection
 from app.security import decrypt, encrypt
-from app.services.looker_api import test_connection
+from app.services.looker_api import check_looker_url, test_connection
 
 router = APIRouter(prefix="/api/connections", tags=["looker"])
 
@@ -51,6 +51,9 @@ class ConnectionIn(BaseModel):
 
 
 def _apply(c: LookerConnection, body: ConnectionIn) -> None:
+    problem = check_looker_url(body.base_url)
+    if problem:
+        raise HTTPException(400, problem)
     c.name, c.base_url = body.name.strip(), body.base_url.strip().rstrip("/")
     c.bq_connection_name, c.looker_project = body.bq_connection_name.strip(), body.looker_project.strip()
     c.folder_layout, c.client_id = body.folder_layout, body.client_id.strip()

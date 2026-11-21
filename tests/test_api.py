@@ -42,7 +42,7 @@ def client(tmp_path, monkeypatch):
     _reset_schema()  # the app's startup then rebuilds it with the migrations
     from app.main import app
 
-    with TestClient(app) as c:
+    with TestClient(app, headers={"X-Requested-With": "looker-helper"}) as c:
         yield c
     dbmod.reset_engine()
     get_settings.cache_clear()
@@ -159,3 +159,49 @@ def test_migrations_downgrade_and_upgrade(client):
         command.downgrade(cfg, "base")
         command.upgrade(cfg, "head")
     assert client.get("/api/health").json()["database"] == "ok"
+
+
+def test_data_changes_need_the_app_header(client):
+    r = client.post("/api/connections", headers={"X-Requested-With": ""},
+                    json={"name": "x", "base_url": "https://a.cloud.looker.com", "bq_connection_name": "b"})
+    assert r.status_code == 403
+    assert client.get("/api/sessions", headers={"X-Requested-With": ""}).status_code == 200  # reads are fine
+
+
+def test_security_headers(client):
+    r = client.get("/")
+    assert "frame-ancestors 'none'" in r.headers["content-security-policy"]
+    assert r.headers["x-content-type-options"] == "nosniff"
+    assert client.get("/docs").status_code == 404  # API docs are off by default
+
+
+def test_no_dev_user_means_sign_in_required(client, monkeypatch):
+    monkeypatch.setenv("LH_DEV_USER_EMAIL", "")
+    get_settings.cache_clear()
+    assert client.get("/api/me").status_code == 401
+    assert client.get("/api/me", headers={get_settings().auth_header: "a.person@example.com"}).json()["email"] == "a.person@example.com"
+
+
+def test_iap_mode_ignores_plain_header(client, monkeypatch):
+    monkeypatch.setenv("LH_IAP_AUDIENCE", "/projects/1/apps/demo")
+    get_settings.cache_clear()
+    spoofed = {get_settings().auth_header: "boss@example.com", "x-goog-iap-jwt-assertion": "not-a-real-token"}
+    assert client.get("/api/me", headers=spoofed).status_code == 401
+
+
+def test_looker_address_rules(client):
+    def save(url):
+        return client.post("/api/connections", json={"name": "x", "base_url": url, "bq_connection_name": "b"})
+    assert save("http://acme.cloud.looker.com").status_code == 400  # https only
+    assert save("https://user:pw@acme.cloud.looker.com").status_code == 400
+    assert save("https://acme.cloud.looker.com").status_code == 200
+    from app.services.looker_api import check_looker_url
+    assert "internal" in check_looker_url("https://169.254.169.254", resolve=True)  # cloud metadata server
+    assert "internal" in check_looker_url("https://127.0.0.1", resolve=True)
+
+
+def test_project_allowlist(client, monkeypatch):
+    monkeypatch.setenv("LH_BQ_ALLOWED_PROJECTS", "acme-ops")
+    get_settings.cache_clear()
+    assert [p["id"] for p in client.get("/api/meta/projects").json()] == ["acme-ops"]
+    assert client.get("/api/meta/projects/acme-analytics/datasets").status_code == 400

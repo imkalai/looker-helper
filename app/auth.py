@@ -1,3 +1,5 @@
+import logging
+import time
 from dataclasses import dataclass
 
 from fastapi import Depends, HTTPException, Request
@@ -19,8 +21,35 @@ class CurrentUser:
         return self.user.id
 
 
+log = logging.getLogger(__name__)
+IAP_CERTS_URL = "https://www.gstatic.com/iap/verify/public_key-jwk"
+_iap_cache: dict[str, tuple[str, float]] = {}  # token -> (email, expires_at); IAP reuses a token for several minutes
+
+
+def _verify_iap(token: str, audience: str) -> str | None:
+    hit = _iap_cache.get(token)
+    if hit and hit[1] > time.time():
+        return hit[0]
+    from google.auth.transport import requests as g_requests
+    from google.oauth2 import id_token
+
+    try:
+        claims = id_token.verify_token(token, g_requests.Request(), audience=audience, certs_url=IAP_CERTS_URL)
+    except Exception:  # bad signature, wrong audience, expired, ...
+        log.warning("Rejected an IAP token that didn't verify")
+        return None
+    email = str(claims.get("email", "")).lower()
+    if len(_iap_cache) > 5000:
+        _iap_cache.clear()
+    _iap_cache[token] = (email, float(claims.get("exp", time.time())))
+    return email or None
+
+
 def _email_from_request(request: Request) -> str | None:
     settings = get_settings()
+    if settings.iap_audience:
+        token = request.headers.get("x-goog-iap-jwt-assertion", "")
+        return _verify_iap(token, settings.iap_audience) if token else None
     raw = request.headers.get(settings.auth_header, "")
     # IAP sends "accounts.google.com:user@example.com"
     email = raw.split(":", 1)[-1].strip().lower() if raw else ""

@@ -9,6 +9,7 @@ Good Looker practice is applied automatically (business users never choose these
 - "vs last year" measures, cross-filtering and drill fields on the dashboard
 """
 
+import re
 from dataclasses import dataclass, field
 
 import yaml
@@ -135,12 +136,14 @@ def _value_format(metric: Metric, settings: Settings) -> str | None:
     return None
 
 
+_NUMBER = re.compile(r"^-?\d{1,18}(\.\d{1,18})?$")
+
+
 def _sql_literal(value: str) -> str:
-    try:
-        float(value)
+    """A BigQuery literal. Values are already checked by the planner (no ';;', braces or line breaks)."""
+    if _NUMBER.match(value):
         return value
-    except ValueError:
-        return "'" + value.replace("'", "\\'") + "'"
+    return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
 
 
 class Generator:

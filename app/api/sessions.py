@@ -79,7 +79,7 @@ class SessionIn(BaseModel):
     project: str
     dataset: str
     dataset_label: str = ""
-    tables: list[str] = Field(min_length=1)
+    tables: list[str] = Field(min_length=1, max_length=50)
     looker_connection_id: int | None = None
     model_name: str = ""
     title: str = ""

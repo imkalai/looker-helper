@@ -90,7 +90,7 @@ The default settings use **demo mode**: built-in sample tables and a stand-in fo
 |---|---|
 | **BigQuery** | Set `LH_METADATA_MODE=live`. The app uses Application Default Credentials (`gcloud auth application-default login`, or a service account on the server). It reads table details and runs dry runs only. It never reads table data. Set `LH_GCP_BILLING_PROJECT` if dry runs should be billed to a specific project. |
 | **Cortex** | Add the corporate client call in `app/services/cortex/real.py` (only `chat()` is needed). Then set `LH_CORTEX_MODE=real` and fill in Settings › AI assistant. Prompts are in `app/services/cortex/prompts.py`. |
-| **Sign-in** | The app reads the user's email from the `LH_AUTH_HEADER` request header (IAP's `X-Goog-Authenticated-User-Email` by default). Leave `LH_DEV_USER_EMAIL` empty in production. Admins are listed in `LH_ADMIN_EMAILS`. |
+| **Sign-in** | Behind Google IAP, set `LH_IAP_AUDIENCE`, so each request's signed IAP token is checked. With another sign-in proxy, the email in `LH_AUTH_HEADER` is trusted, so only the proxy must be able to reach the app. `LH_DEV_USER_EMAIL` is for local use only. Docker Compose sets it, but never set it in a real deployment. Admins are listed in `LH_ADMIN_EMAILS`. |
 | **Looker** | Users add connections in Settings or in the new-session dialog. API client ID and secret are optional. When given, "Test" signs in to the Looker API and checks that the BigQuery connection exists. Secrets are encrypted with `LH_SECRET_KEY` (or a generated `data/secret.key`). |
 | **Logo** | Put the official logo file at `static/assets/brand-logo.svg`. It replaces the neutral mark automatically. |
 
@@ -128,6 +128,29 @@ tests/
 ## Not built yet
 
 - Sending files straight to a Looker project (Git branch and pull request), real numbers in Preview, and schedules and alerts. These need Looker API access (Phase 7 of `docs/IMPLEMENTATION_PLAN.md`).
+
+## Security
+
+- **Sign-in:** IAP tokens are verified when `LH_IAP_AUDIENCE` is set. There's no default user outside local Docker Compose. Each user sees only their own sessions and connections. Cortex settings and shared connections are admin-only.
+- **Requests and browser:** every request that changes data must carry the app's `X-Requested-With` header, which blocks cross-site request forgery. Responses carry a strict Content-Security-Policy, and the API docs are off unless `LH_ENABLE_API_DOCS=true`.
+- **Data access:** BigQuery is read with the app's own credentials, and only table details and dry runs are used. Limit which projects users can browse with `LH_BQ_ALLOWED_PROJECTS`.
+- **Looker addresses:** must be HTTPS. Loopback, link-local and metadata-server addresses are refused, and redirects aren't followed. Limit hosts with `LH_LOOKER_ALLOWED_HOSTS`.
+- **Generated LookML:** filter values that could break out of generated SQL or LookML (`;;`, `${`, Liquid tags, line breaks) are rejected, and quotes and backslashes are escaped. Everything else comes from BigQuery names or is sanitised.
+- **Secrets:** Looker API secrets and the Cortex key are encrypted at rest and never sent back to the browser.
+- **Container:** PostgreSQL has no network port. The app runs as a non-root user. Package versions are pinned in `constraints.txt`.
+- **Not built yet:** an audit log and rate limits on Cortex calls.
+
+## Updating dependencies
+
+Change `requirements.txt` or `requirements-dev.txt`. Then build the test image without the pinned versions, run the tests, and save the versions that passed:
+
+```powershell
+docker build --target test -t looker-helper:test --build-arg PIP_CONSTRAINTS=/dev/null .
+docker run --rm looker-helper:test
+docker run --rm --entrypoint pip looker-helper:test freeze --exclude-editable > constraints.txt
+```
+
+Keep the two comment lines at the top of `constraints.txt`.
 
 ## Changing the database schema
 

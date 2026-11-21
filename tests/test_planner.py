@@ -75,3 +75,21 @@ def test_validation_drops_personal_data_breakdowns(sales):
              dimensions=[Dimension(table="customers", column="email")])
     p, errors = planner.validate_plan(p, sales)
     assert not errors and p.dimensions == [] and p.notes
+
+
+@pytest.mark.parametrize("value", ["x' ;; } sql_always_where: 1=1", "{{ _user_attributes['x'] }}", "${orders.id}", "a\nb", ""])
+def test_unsafe_filter_values_rejected(sales, value):
+    from app.schemas.plan import Filter
+
+    p = Plan(title="x", base_table="orders", metrics=[Metric(name="n", label="N", agg="count", table="orders")],
+             filters=[Filter(table="orders", column="status", operator="not_equals", values=[value])])
+    _, errors = planner.validate_plan(p, sales)
+    assert errors
+
+
+def test_sql_literal_escaping():
+    from app.services.lookml.generator import _sql_literal
+
+    bs = chr(92)  # a backslash
+    assert _sql_literal("o'brien" + bs) == "'o" + bs + "'brien" + bs + bs + "'"  # quote and backslash both escaped
+    assert _sql_literal("42") == "42" and _sql_literal("nan") == "'nan'"
